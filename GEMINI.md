@@ -71,3 +71,6 @@ When generating code or responding in the chat/terminal:
   - Integrated real-time chat response streaming from Go backend using `/api/v1/chat` Server-Sent Events.
   - Added collapsible agent thought process container showing active reasoning logs with manual expansion dropdown button.
   - Added formatting support for bold markdown notation `**text**` with custom styled theme highlights.
+- **2026-06-14**: Replaced text-based sidebar logo with `sakura.png` brand asset using `object-fit: contain`.
+  - Added a dynamic HTML Canvas squircle favicon generator that clips `sakura.png` over the signature pink-red theme gradient and injects it as a base64 Data URL.
+

@@ -180,6 +180,7 @@ body {
   flex-shrink: 0;
   font-size: var(--font-md);
   line-height: 1;
+  object-fit: contain;
 }
 
 .collapse-sidebar-btn {

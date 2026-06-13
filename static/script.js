@@ -63,6 +63,7 @@ if (typeof document !== 'undefined') {
 
       setupEventListeners();
       setupSakuraEffect();
+      makeFaviconSquircle();
       console.log('[Aries UI] Chat application initialized successfully');
     } catch (error) {
       console.error('[Aries UI Error] Initialization failed:', error);
@@ -751,7 +752,59 @@ function escapeHTML(str) {
 
 // Scroll messages pane to bottom
 function scrollToBottom() {
-  messagesStream.scrollTop = messagesStream.scrollHeight;
+  if (messagesStream) {
+    messagesStream.scrollTop = messagesStream.scrollHeight;
+  }
+}
+
+// Dynamically generate a squircle favicon using the brand asset and theme gradient
+function makeFaviconSquircle() {
+  if (typeof document === 'undefined') return;
+  const img = new Image();
+  img.src = 'assets/sakura.png';
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Draw background squircle mask
+    ctx.beginPath();
+    const r = 16; // Rounded corner radius for squircle look
+    ctx.moveTo(r, 0);
+    ctx.lineTo(64 - r, 0);
+    ctx.quadraticCurveTo(64, 0, 64, r);
+    ctx.lineTo(64, 64 - r);
+    ctx.quadraticCurveTo(64, 64, 64 - r, 64);
+    ctx.lineTo(r, 64);
+    ctx.quadraticCurveTo(0, 64, 0, 64 - r);
+    ctx.lineTo(0, r);
+    ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.clip();
+
+    // Fill with theme's user message gradient
+    const gradient = ctx.createLinearGradient(0, 0, 64, 64);
+    gradient.addColorStop(0, '#ff758f');
+    gradient.addColorStop(1, '#ff4d6d');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+
+    // Draw the sakura logo in the center
+    const iconSize = 44;
+    const offset = (64 - iconSize) / 2;
+    ctx.drawImage(img, offset, offset, iconSize, iconSize);
+
+    // Set favicon href
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = canvas.toDataURL('image/png');
+  };
 }
 
 // Core action: Send User Message & Handle Bot Cycle
