@@ -5,7 +5,7 @@ let sidebarCollapsed = false;
 let currentTheme = 'dark';
 
 // UI Element Selectors (lazy load if in browser context)
-let sidebar, sidebarBackdrop, menuToggle, newChatBtn, chatHistoryList, activeChatTitle, activeChatStatus, messagesStream, chatInput, sendBtn, collapseSidebarBtn, settingsBtn, settingsDropdown, themeToggleCheckbox, themeIcon;
+let sidebar, sidebarBackdrop, menuToggle, newChatBtn, chatHistoryList, messagesStream, chatInput, sendBtn, collapseSidebarBtn, settingsBtn, settingsDropdown, themeToggleCheckbox, themeIcon;
 
 if (typeof document !== 'undefined') {
   sidebar = document.getElementById('sidebar');
@@ -13,8 +13,6 @@ if (typeof document !== 'undefined') {
   menuToggle = document.getElementById('menuToggle');
   newChatBtn = document.getElementById('newChatBtn');
   chatHistoryList = document.getElementById('chatHistoryList');
-  activeChatTitle = document.getElementById('activeChatTitle');
-  activeChatStatus = document.getElementById('activeChatStatus');
   messagesStream = document.getElementById('messagesStream');
   chatInput = document.getElementById('chatInput');
   sendBtn = document.getElementById('sendBtn');
@@ -231,8 +229,6 @@ function showWelcomeScreen() {
       <p class="empty-chat-subtext">Aries is ready to collaborate. Type a message below to start a conversation.</p>
     </div>
   `;
-  activeChatTitle.textContent = 'Aries Assistant';
-  activeChatStatus.textContent = 'Online';
   
   // Highlight nothing in sidebar
   document.querySelectorAll('.chat-item').forEach(item => {
@@ -253,6 +249,43 @@ function getGreetingMessage(hour = new Date().getHours()) {
   }
 }
 
+// Date grouping helper
+function groupChatsByDate(sortedChats) {
+  const groups = {};
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+
+  sortedChats.forEach(chat => {
+    const chatDate = new Date(chat.timestamp);
+    chatDate.setHours(0, 0, 0, 0);
+
+    let groupName = "";
+    if (chatDate.getTime() === today.getTime()) {
+      groupName = "Today";
+    } else if (chatDate.getTime() === yesterday.getTime()) {
+      groupName = "Yesterday";
+    } else {
+      // Format as "D Month YYYY" (e.g. "11 June 2026")
+      groupName = chatDate.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    if (!groups[groupName]) {
+      groups[groupName] = [];
+    }
+    groups[groupName].push(chat);
+  });
+
+  return groups;
+}
+
 // Render the sidebar history list
 function renderSidebar() {
   chatHistoryList.innerHTML = '';
@@ -270,37 +303,46 @@ function renderSidebar() {
     chatHistoryList.appendChild(emptyMsg);
     return;
   }
+
+  const groups = groupChatsByDate(sortedChats);
   
-  sortedChats.forEach(chat => {
-    const chatItem = document.createElement('li');
-    chatItem.className = `chat-item ${chat.id === activeChatId ? 'active' : ''}`;
-    chatItem.dataset.id = chat.id;
-    
-    chatItem.innerHTML = `
-      <i class="fa-regular fa-message chat-item-icon"></i>
-      <div class="chat-item-details">
-        <div class="chat-item-title">${escapeHTML(chat.title)}</div>
-        <div class="chat-item-time">${formatTimeAgo(chat.timestamp)}</div>
-      </div>
-      <button class="delete-chat-btn" aria-label="Delete Chat">
-        <i class="fa-regular fa-trash-can"></i>
-      </button>
-    `;
-    
-    // Add Click listener to select chat
-    chatItem.addEventListener('click', (e) => {
-      // Don't trigger select if delete button was clicked
-      if (e.target.closest('.delete-chat-btn')) {
-        e.stopPropagation();
-        deleteChat(chat.id);
-        return;
-      }
-      selectChat(chat.id);
-      closeMobileSidebar();
+  for (const [groupName, groupChats] of Object.entries(groups)) {
+    // Render group header
+    const headerItem = document.createElement('li');
+    headerItem.className = 'sidebar-date-group-header';
+    headerItem.textContent = groupName;
+    chatHistoryList.appendChild(headerItem);
+
+    // Render each simplified chat card in this group
+    groupChats.forEach(chat => {
+      const chatItem = document.createElement('li');
+      chatItem.className = `chat-item ${chat.id === activeChatId ? 'active' : ''}`;
+      chatItem.dataset.id = chat.id;
+      
+      chatItem.innerHTML = `
+        <div class="chat-item-details">
+          <div class="chat-item-title">${escapeHTML(chat.title)}</div>
+        </div>
+        <button class="delete-chat-btn" aria-label="Delete Chat">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+      `;
+      
+      // Add Click listener to select chat
+      chatItem.addEventListener('click', (e) => {
+        // Don't trigger select if delete button was clicked
+        if (e.target.closest('.delete-chat-btn')) {
+          e.stopPropagation();
+          deleteChat(chat.id);
+          return;
+        }
+        selectChat(chat.id);
+        closeMobileSidebar();
+      });
+      
+      chatHistoryList.appendChild(chatItem);
     });
-    
-    chatHistoryList.appendChild(chatItem);
-  });
+  }
 }
 
 // Select a specific chat by ID
@@ -312,9 +354,6 @@ function selectChat(id) {
   }
   
   activeChatId = id;
-  activeChatTitle.textContent = selectedChat.title;
-  activeChatStatus.textContent = 'Online';
-  
   saveStateToStorage();
   renderSidebar();
   renderMessages(selectedChat.messages);
@@ -351,13 +390,13 @@ function renderMessages(messages) {
   }
   
   messages.forEach(msg => {
-    appendMessageUI(msg.sender, msg.text, msg.time);
+    appendMessageUI(msg.sender, msg.text);
   });
   scrollToBottom();
 }
 
-// Create a new message bubble elements
-function appendMessageUI(sender, text, time) {
+// Create a new message bubble elements (Timestamp displays removed completely)
+function appendMessageUI(sender, text) {
   // Clear empty state if visible
   const emptyState = messagesStream.querySelector('.empty-chat-state');
   if (emptyState) {
@@ -378,12 +417,7 @@ function appendMessageUI(sender, text, time) {
   bubble.className = 'message-bubble';
   bubble.innerHTML = formatMessageText(text);
   
-  const timeSpan = document.createElement('span');
-  timeSpan.className = 'message-time';
-  timeSpan.textContent = time;
-  
   content.appendChild(bubble);
-  content.appendChild(timeSpan);
   
   msgDiv.appendChild(avatar);
   msgDiv.appendChild(content);
@@ -427,7 +461,6 @@ function formatTimeAgo(dateStr) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// HTML Escaping Utility
 // HTML Escaping Utility
 function escapeHTML(str) {
   return str.replace(/[&<>'"]/g, 
@@ -480,7 +513,7 @@ async function handleSendMessage() {
   // Update UI & Storage
   saveStateToStorage();
   renderSidebar();
-  appendMessageUI('user', text, time);
+  appendMessageUI('user', text);
   scrollToBottom();
   
   // Trigger Simulated Bot Response Loop
@@ -521,7 +554,7 @@ async function simulateBotResponse(userPrompt, chatObj) {
   
   // Update state & UI
   saveStateToStorage();
-  appendMessageUI('bot', botText, time);
+  appendMessageUI('bot', botText);
   scrollToBottom();
 }
 
@@ -556,4 +589,8 @@ if (typeof module !== 'undefined' && module.exports) {
     formatTimeAgo,
     getGreetingMessage
   };
+}
+// Export additional function for group testing
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports.groupChatsByDate = groupChatsByDate;
 }

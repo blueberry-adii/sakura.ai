@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { generateResponseText, escapeHTML, formatTimeAgo, getGreetingMessage } = require('./script.js');
+const { generateResponseText, escapeHTML, formatTimeAgo, getGreetingMessage, groupChatsByDate } = require('./script.js');
 
 console.log('--- Starting Aries script.js Unit Tests ---');
 
@@ -74,6 +74,44 @@ try {
   console.log('✓ Dynamic greetings map hours correctly.');
 } catch (err) {
   console.error('✗ Dynamic greetings test failed:', err.message);
+  process.exit(1);
+}
+
+// Test 5: Dynamic Date Grouping
+try {
+  console.log('Running Test 5: groupChatsByDate...');
+  const now = new Date();
+  
+  const todayISO = now.toISOString();
+  
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const yesterdayISO = yesterday.toISOString();
+  
+  const olderDate = new Date('2026-06-11T12:00:00Z');
+  const olderISO = olderDate.toISOString();
+
+  const mockChats = [
+    { id: '1', title: 'Chat 1', timestamp: todayISO },
+    { id: '2', title: 'Chat 2', timestamp: yesterdayISO },
+    { id: '3', title: 'Chat 3', timestamp: olderISO }
+  ];
+
+  const grouped = groupChatsByDate(mockChats);
+  
+  assert.ok(grouped['Today']);
+  assert.strictEqual(grouped['Today'][0].title, 'Chat 1');
+  
+  assert.ok(grouped['Yesterday']);
+  assert.strictEqual(grouped['Yesterday'][0].title, 'Chat 2');
+  
+  assert.ok(grouped['June 11, 2026'] || grouped['11 June 2026']);
+  const olderKey = grouped['June 11, 2026'] ? 'June 11, 2026' : '11 June 2026';
+  assert.strictEqual(grouped[olderKey][0].title, 'Chat 3');
+
+  console.log('✓ Date grouping resolves Today, Yesterday, and legacy calendar structures.');
+} catch (err) {
+  console.error('✗ Date grouping test failed:', err.message);
   process.exit(1);
 }
 

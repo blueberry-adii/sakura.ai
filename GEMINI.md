@@ -58,4 +58,5 @@ When generating code or responding in the chat/terminal:
   - Refined UI layout with a collapsible sidebar toggle, light/dark theme modes, pastel reddish-pink/red styling, and dynamic hourly greeting rotations.
   - Resolved sidebar collapse expand visibility, text wrap wrapping on empty states, and brand letter transparency.
   - Replaced the direct theme toggle with a profile settings dropdown card featuring user profile info and check switches.
+  - Unified color scheme, hid past chats inside collapsed sidebars, dynamically categorized chats by calendar date groups, styled input text area gradient blurs, centered sending alignment, and removed message bubble timestamps.
 
