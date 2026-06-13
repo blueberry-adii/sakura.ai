@@ -61,4 +61,10 @@ When generating code or responding in the chat/terminal:
   - Unified color scheme, hid past chats inside collapsed sidebars, dynamically categorized chats by calendar date groups, styled input text area gradient blurs, centered sending alignment, and removed message bubble timestamps.
   - Restored distinct soft pastel light mode styling variables and component overrides (sidebar, header, input boxes) for proper visibility.
   - Added a dynamic HTML5 Canvas cherry blossom falling animation and enhanced ambient dark-mode background glow.
+  - Added slide/fade transitions for mobile sidebar drawer collapse and expand states.
+  - Resolved stacking index overlaps on mobile view, ensuring the sidebar header elements render sharply on top of the main header blur.
+  - Updated mobile collapse toggle to close the drawer overlay and slide it away cleanly.
+  - Implemented desktop hover options button (3-dot vertical ellipsis) revealing a popover context dropdown.
+  - Created touch start/move/end gesture timers to capture mobile 600ms long-press inputs, displaying Rename and Delete actions.
+  - Fixed overflow clipping on chat cards to display option popover dropdowns completely outside card boundaries.
 

@@ -85,10 +85,15 @@ function setupEventListeners() {
     settingsDropdown.classList.toggle('active');
   });
 
-  // Close Settings Dropdown clicking outside
+  // Close Dropdowns clicking outside
   document.addEventListener('click', (e) => {
     if (settingsDropdown && !settingsDropdown.contains(e.target) && e.target !== settingsBtn) {
       settingsDropdown.classList.remove('active');
+    }
+    if (!e.target.closest('.chat-options-btn') && !e.target.closest('.chat-options-dropdown')) {
+      document.querySelectorAll('.chat-options-dropdown').forEach(d => {
+        d.classList.remove('active');
+      });
     }
   });
 
@@ -126,9 +131,13 @@ function closeMobileSidebar() {
 
 // Desktop Collapsible Sidebar Control
 function toggleSidebarCollapse() {
-  sidebarCollapsed = !sidebarCollapsed;
-  applySidebarCollapse();
-  saveStateToStorage();
+  if (window.innerWidth <= 768) {
+    closeMobileSidebar();
+  } else {
+    sidebarCollapsed = !sidebarCollapsed;
+    applySidebarCollapse();
+    saveStateToStorage();
+  }
 }
 
 function applySidebarCollapse() {
@@ -324,17 +333,80 @@ function renderSidebar() {
         <div class="chat-item-details">
           <div class="chat-item-title">${escapeHTML(chat.title)}</div>
         </div>
-        <button class="delete-chat-btn" aria-label="Delete Chat">
-          <i class="fa-regular fa-trash-can"></i>
+        <button class="chat-options-btn" aria-label="Chat Options">
+          <i class="fa-solid fa-ellipsis-vertical"></i>
         </button>
+        <div class="chat-options-dropdown">
+          <button class="options-dropdown-item rename-opt">
+            <i class="fa-regular fa-pen-to-square"></i> Rename
+          </button>
+          <button class="options-dropdown-item delete-opt">
+            <i class="fa-regular fa-trash-can"></i> Delete
+          </button>
+        </div>
       `;
       
-      // Add Click listener to select chat
-      chatItem.addEventListener('click', (e) => {
-        // Don't trigger select if delete button was clicked
-        if (e.target.closest('.delete-chat-btn')) {
+      // Touch events for mobile long press
+      let touchTimer = null;
+      let isLongPress = false;
+
+      chatItem.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.chat-options-btn') || e.target.closest('.chat-options-dropdown')) {
+          return;
+        }
+        isLongPress = false;
+        touchTimer = setTimeout(() => {
+          isLongPress = true;
+          openChatOptions(chat.id, chatItem);
+        }, 600);
+      });
+
+      chatItem.addEventListener('touchend', (e) => {
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+        if (isLongPress) {
+          e.preventDefault();
           e.stopPropagation();
-          deleteChat(chat.id);
+        }
+      });
+
+      chatItem.addEventListener('touchmove', () => {
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+      });
+
+      // Bind context popover actions
+      const renameOpt = chatItem.querySelector('.rename-opt');
+      const deleteOpt = chatItem.querySelector('.delete-opt');
+      const optionsBtn = chatItem.querySelector('.chat-options-btn');
+      const dropdown = chatItem.querySelector('.chat-options-dropdown');
+
+      if (optionsBtn) {
+        optionsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openChatOptions(chat.id, chatItem);
+        });
+      }
+
+      renameOpt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('active');
+        renameChatInline(chat.id, chatItem);
+      });
+
+      deleteOpt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('active');
+        deleteChat(chat.id);
+      });
+
+      // Click select chat
+      chatItem.addEventListener('click', (e) => {
+        if (e.target.closest('.chat-options-btn') || e.target.closest('.chat-options-dropdown')) {
           return;
         }
         selectChat(chat.id);
@@ -344,6 +416,76 @@ function renderSidebar() {
       chatHistoryList.appendChild(chatItem);
     });
   }
+}
+
+// Open options dropdown for a chat item
+function openChatOptions(chatId, chatItemElement) {
+  document.querySelectorAll('.chat-options-dropdown').forEach(d => {
+    d.classList.remove('active');
+  });
+
+  const dropdown = chatItemElement.querySelector('.chat-options-dropdown');
+  if (dropdown) {
+    dropdown.classList.add('active');
+  }
+}
+
+// Rename conversation inline edit text box
+function renameChatInline(id, chatItemElement) {
+  const chat = chats.find(c => c.id === id);
+  if (!chat) return;
+
+  const titleEl = chatItemElement.querySelector('.chat-item-title');
+  if (!titleEl) return;
+
+  if (chatItemElement.querySelector('.chat-rename-input')) return;
+
+  const currentTitle = chat.title;
+  const detailsEl = chatItemElement.querySelector('.chat-item-details');
+
+  titleEl.style.display = 'none';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'chat-rename-input';
+  input.value = currentTitle;
+  detailsEl.appendChild(input);
+
+  input.focus();
+  input.select();
+
+  let finished = false;
+
+  function finishRename(save) {
+    if (finished) return;
+    finished = true;
+
+    const val = input.value.trim();
+    if (save && val && val !== currentTitle) {
+      chat.title = val;
+      saveStateToStorage();
+    }
+
+    input.remove();
+    titleEl.style.display = 'block';
+    renderSidebar();
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      finishRename(true);
+    } else if (e.key === 'Escape') {
+      finishRename(false);
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    finishRename(true);
+  });
+
+  input.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
 }
 
 // Select a specific chat by ID
