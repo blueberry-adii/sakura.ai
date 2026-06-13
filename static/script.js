@@ -700,16 +700,99 @@ function appendMessageUI(sender, text) {
   messagesStream.appendChild(msgDiv);
 }
 
-// Helper to format bot output with bold/code blocks
+// Helper to format bot output with standard Markdown elements (headers, lists, bold, inline code, and code blocks)
 function formatMessageText(text) {
-  let formatted = escapeHTML(text);
-  // Simple code block replacement
-  formatted = formatted.replace(/```(javascript|python|html|css)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-  // Bold formatting replacement: **text** to <strong>text</strong>
-  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  // Line break support
-  formatted = formatted.replace(/\n/g, '<br>');
-  return formatted;
+  // 1. Escape HTML to prevent XSS (done first so we can safely inject HTML tags later)
+  let escaped = escapeHTML(text);
+
+  // 2. Extract and format multi-line code blocks to shield them from inline formatting
+  const codeBlocks = [];
+  escaped = escaped.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    const placeholder = `__CODE_BLOCK_PLACEHOLDER_${codeBlocks.length}__`;
+    codeBlocks.push(`<pre class="code-block ${lang ? 'lang-' + lang : ''}"><code>${code}</code></pre>`);
+    return placeholder;
+  });
+
+  // 3. Parse headers (###, ##, #)
+  escaped = escaped.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+  escaped = escaped.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+  escaped = escaped.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+
+  // 4. Inline code blocks (`code`)
+  escaped = escaped.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+  // 5. Bold & Italics
+  escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // 6. Indent-aware List Parser
+  const lines = escaped.split('\n');
+  const parsedLines = [];
+  const stack = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const bulletMatch = line.match(/^(\s*)([-*•])\s+(.*)$/);
+    const numMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
+
+    if (bulletMatch || numMatch) {
+      const indent = (bulletMatch ? bulletMatch[1] : numMatch[1]).length;
+      const type = bulletMatch ? 'ul' : 'ol';
+      const content = bulletMatch ? bulletMatch[3] : numMatch[3];
+
+      // Close sub-lists that have greater indentation than the current list item
+      while (stack.length > 0 && stack[stack.length - 1].indent > indent) {
+        const closed = stack.pop();
+        parsedLines.push(`</${closed.type}>`);
+      }
+
+      if (stack.length > 0 && stack[stack.length - 1].indent === indent) {
+        if (stack[stack.length - 1].type !== type) {
+          const closed = stack.pop();
+          parsedLines.push(`</${closed.type}>`);
+          parsedLines.push(`<${type}>`);
+          stack.push({ type, indent });
+        } else {
+          parsedLines.push('</li>');
+        }
+      } else {
+        parsedLines.push(`<${type}>`);
+        stack.push({ type, indent });
+      }
+
+      parsedLines.push(`<li>${content}`);
+    } else {
+      // Line is not a list item: close all currently open list scopes
+      while (stack.length > 0) {
+        const closed = stack.pop();
+        parsedLines.push(`</li></${closed.type}>`);
+      }
+      parsedLines.push(line);
+    }
+  }
+
+  while (stack.length > 0) {
+    const closed = stack.pop();
+    parsedLines.push(`</li></${closed.type}>`);
+  }
+
+  escaped = parsedLines.join('\n');
+
+  // 7. Line breaks (preserve inside list items or general paragraphs)
+  escaped = escaped.replace(/\n/g, '<br>');
+
+  // Clean up duplicate breaks near block and list elements to prevent unwanted empty spaces
+  escaped = escaped.replace(/<\/(ul|ol|pre|h1|h2|h3|li)><br>/g, '</$1>');
+  escaped = escaped.replace(/<br><(ul|ol|pre|h1|h2|h3|li)>/g, '<$1>');
+  escaped = escaped.replace(/<(ul|ol)><br>/g, '<$1>');
+  escaped = escaped.replace(/<br><\/(ul|ol)>/g, '</$1>');
+
+  // 9. Restore code blocks
+  codeBlocks.forEach((html, index) => {
+    escaped = escaped.replace(`__CODE_BLOCK_PLACEHOLDER_${index}__`, html);
+  });
+
+  return escaped;
 }
 
 // Generate human-friendly timestamp
