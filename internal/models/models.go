@@ -5,12 +5,13 @@ type Message struct {
 	Content string `json:"content"`
 }
 
-type ChatPayload struct {
+type OllamaRequest struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
+	Stream   bool      `json:"stream"`
 }
 
-type StreamResponse struct {
+type OllamaResponse struct {
 	Message struct {
 		Role     string `json:"role"`
 		Content  string `json:"content"`
