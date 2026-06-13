@@ -54,13 +54,13 @@ if (typeof document !== 'undefined') {
       applyTheme();
       applySidebarCollapse();
       renderSidebar();
-      
+
       if (activeChatId) {
         selectChat(activeChatId);
       } else {
         showWelcomeScreen();
       }
-      
+
       setupEventListeners();
       setupSakuraEffect();
       console.log('[Aries UI] Chat application initialized successfully');
@@ -93,12 +93,6 @@ async function startChatStream(message, chatObj) {
   };
 
   let botBubble = null;
-  let thinkingContainer = null;
-  let thinkingContentEl = null;
-  let thinkingStatusEl = null;
-  let typingIndicatorInMsg = null;
-  let isThinkingPhase = true;
-  let fullThinkingText = "";
   let fullBotResponseText = "";
 
   try {
@@ -141,123 +135,36 @@ async function startChatStream(message, chatObj) {
             
             console.log("Received data:", parsedData);
             
-            if (parsedData.message) {
-              const thinkingChunk = parsedData.message.thinking || "";
-              const contentChunk = parsedData.message.content || "";
-              
-              if (thinkingChunk) {
-                if (!thinkingContainer) {
-                  if (activeChatId === chatObj.id) {
-                    // Remove initial global typingDiv since we now attach a localized one
-                    if (typingDiv) {
-                      typingDiv.remove();
-                    }
-                    
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = 'message bot';
-                    msgDiv.innerHTML = `
-                      <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
-                      <div class="message-content">
-                        <div class="thinking-container">
-                          <button class="thinking-header" aria-label="Toggle Thinking Process">
-                            <span class="thinking-status"><i class="fa-solid fa-brain fa-spin-pulse" style="margin-right: 4px; color: var(--color-primary);"></i> Thinking...</span>
-                            <i class="fa-solid fa-chevron-down thinking-toggle-icon"></i>
-                          </button>
-                          <div class="thinking-content"></div>
-                        </div>
-                        <div class="typing-indicator">
-                          <div class="typing-dot"></div>
-                          <div class="typing-dot"></div>
-                          <div class="typing-dot"></div>
-                        </div>
-                      </div>
-                    `;
-                    messagesStream.appendChild(msgDiv);
-                    
-                    thinkingContainer = msgDiv.querySelector('.thinking-container');
-                    thinkingContentEl = msgDiv.querySelector('.thinking-content');
-                    thinkingStatusEl = msgDiv.querySelector('.thinking-status');
-                    typingIndicatorInMsg = msgDiv.querySelector('.typing-indicator');
-                    
-                    const toggleBtn = msgDiv.querySelector('.thinking-header');
-                    toggleBtn.addEventListener('click', () => {
-                      thinkingContainer.classList.toggle('collapsed');
-                    });
-                  }
+            if (parsedData.message && parsedData.message.content) {
+              if (!botBubble) {
+                // Remove typing indicator once the first chunk of content arrives
+                if (typingDiv) {
+                  typingDiv.remove();
                 }
                 
-                fullThinkingText += thinkingChunk;
-                if (thinkingContentEl && activeChatId === chatObj.id) {
-                  thinkingContentEl.textContent = fullThinkingText;
-                  scrollToBottom();
+                if (activeChatId === chatObj.id) {
+                  const msgDiv = document.createElement('div');
+                  msgDiv.className = 'message bot';
+                  msgDiv.innerHTML = `
+                    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-content">
+                      <div class="message-bubble"></div>
+                    </div>
+                  `;
+                  messagesStream.appendChild(msgDiv);
+                  botBubble = msgDiv.querySelector('.message-bubble');
                 }
               }
               
-              if (contentChunk) {
-                if (isThinkingPhase) {
-                  isThinkingPhase = false;
-                  // Remove bubble typing effect inside the message block
-                  if (typingIndicatorInMsg) {
-                    typingIndicatorInMsg.remove();
-                  }
-                  if (thinkingContainer) {
-                    thinkingContainer.classList.add('collapsed');
-                  }
-                  if (thinkingStatusEl) {
-                    thinkingStatusEl.innerHTML = `<i class="fa-solid fa-brain" style="margin-right: 4px; color: var(--color-text-muted);"></i> Thought Process`;
-                  }
-                }
-                
-                if (!botBubble) {
-                  // Ensure initial typingDiv is removed if thinking was skipped
-                  if (typingDiv) {
-                    typingDiv.remove();
-                  }
-                  
-                  if (activeChatId === chatObj.id) {
-                    let msgContentEl;
-                    if (thinkingContainer) {
-                      msgContentEl = thinkingContainer.parentElement;
-                    } else {
-                      const msgDiv = document.createElement('div');
-                      msgDiv.className = 'message bot';
-                      msgDiv.innerHTML = `
-                        <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
-                        <div class="message-content"></div>
-                      `;
-                      messagesStream.appendChild(msgDiv);
-                      msgContentEl = msgDiv.querySelector('.message-content');
-                    }
-                    
-                    const bubble = document.createElement('div');
-                    bubble.className = 'message-bubble';
-                    msgContentEl.appendChild(bubble);
-                    botBubble = bubble;
-                  }
-                }
-                
-                fullBotResponseText += contentChunk;
-                if (botBubble && activeChatId === chatObj.id) {
-                  botBubble.innerHTML = formatMessageText(fullBotResponseText);
-                  scrollToBottom();
-                }
+              fullBotResponseText += parsedData.message.content;
+              if (botBubble && activeChatId === chatObj.id) {
+                botBubble.innerHTML = formatMessageText(fullBotResponseText);
+                scrollToBottom();
               }
             }
             
             if (parsedData.done === true) {
               console.log("Stream marked completed by backend.");
-              if (isThinkingPhase) {
-                isThinkingPhase = false;
-                if (typingIndicatorInMsg) {
-                  typingIndicatorInMsg.remove();
-                }
-                if (thinkingContainer) {
-                  thinkingContainer.classList.add('collapsed');
-                }
-                if (thinkingStatusEl) {
-                  thinkingStatusEl.innerHTML = `<i class="fa-solid fa-brain" style="margin-right: 4px; color: var(--color-text-muted);"></i> Thought Process`;
-                }
-              }
               isDone = true;
               break;
             }
@@ -268,13 +175,13 @@ async function startChatStream(message, chatObj) {
       }
     }
 
+    // Ensure typing indicator is removed when complete
+    if (typingDiv) {
+      typingDiv.remove();
+    }
+
     // Append finalized bot response to memory state and save
-    const botMsg = { 
-      sender: 'bot', 
-      text: fullBotResponseText, 
-      thinking: fullThinkingText, 
-      time: getShortTime() 
-    };
+    const botMsg = { sender: 'bot', text: fullBotResponseText, time: getShortTime() };
     chatObj.messages.push(botMsg);
     saveStateToStorage();
 
@@ -282,9 +189,6 @@ async function startChatStream(message, chatObj) {
     console.error("Failed to fetch or parse the stream:", error);
     if (typingDiv) {
       typingDiv.remove();
-    }
-    if (typingIndicatorInMsg) {
-      typingIndicatorInMsg.remove();
     }
     const errorMsgText = "Sorry, I encountered an error connecting to the Aries service. Please ensure the backend is running.";
     if (activeChatId === chatObj.id) {
@@ -416,7 +320,7 @@ function loadStateFromStorage() {
     const savedActiveChat = localStorage.getItem('aries_active_chat_id');
     const savedTheme = localStorage.getItem('aries_theme');
     const savedCollapse = localStorage.getItem('aries_sidebar_collapsed');
-    
+
     if (savedChats) {
       chats = JSON.parse(savedChats);
     }
@@ -465,7 +369,7 @@ function showWelcomeScreen() {
       <p class="empty-chat-subtext">Aries is ready to collaborate. Type a message below to start a conversation.</p>
     </div>
   `;
-  
+
   // Highlight nothing in sidebar
   document.querySelectorAll('.chat-item').forEach(item => {
     item.classList.remove('active');
@@ -525,10 +429,10 @@ function groupChatsByDate(sortedChats) {
 // Render the sidebar history list
 function renderSidebar() {
   chatHistoryList.innerHTML = '';
-  
+
   // Sort chats by timestamp descending
   const sortedChats = [...chats].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  
+
   if (sortedChats.length === 0) {
     const emptyMsg = document.createElement('li');
     emptyMsg.style.padding = 'var(--spacing-md)';
@@ -541,7 +445,7 @@ function renderSidebar() {
   }
 
   const groups = groupChatsByDate(sortedChats);
-  
+
   for (const [groupName, groupChats] of Object.entries(groups)) {
     // Render group header
     const headerItem = document.createElement('li');
@@ -554,7 +458,7 @@ function renderSidebar() {
       const chatItem = document.createElement('li');
       chatItem.className = `chat-item ${chat.id === activeChatId ? 'active' : ''}`;
       chatItem.dataset.id = chat.id;
-      
+
       chatItem.innerHTML = `
         <div class="chat-item-details">
           <div class="chat-item-title">${escapeHTML(chat.title)}</div>
@@ -571,7 +475,7 @@ function renderSidebar() {
           </button>
         </div>
       `;
-      
+
       // Touch events for mobile long press
       let touchTimer = null;
       let isLongPress = false;
@@ -638,7 +542,7 @@ function renderSidebar() {
         selectChat(chat.id);
         closeMobileSidebar();
       });
-      
+
       chatHistoryList.appendChild(chatItem);
     });
   }
@@ -721,7 +625,7 @@ function selectChat(id) {
     showWelcomeScreen();
     return;
   }
-  
+
   activeChatId = id;
   saveStateToStorage();
   renderSidebar();
@@ -735,10 +639,10 @@ function deleteChat(id) {
     if (activeChatId === id) {
       activeChatId = chats.length > 0 ? chats[0].id : null;
     }
-    
+
     saveStateToStorage();
     renderSidebar();
-    
+
     if (activeChatId) {
       selectChat(activeChatId);
     } else {
@@ -759,13 +663,13 @@ function renderMessages(messages) {
   }
   
   messages.forEach(msg => {
-    appendMessageUI(msg.sender, msg.text, msg.thinking);
+    appendMessageUI(msg.sender, msg.text);
   });
   scrollToBottom();
 }
 
 // Create a new message bubble elements (Timestamp displays removed completely)
-function appendMessageUI(sender, text, thinking = "") {
+function appendMessageUI(sender, text) {
   // Clear empty state if visible
   const emptyState = messagesStream.querySelector('.empty-chat-state');
   if (emptyState) {
@@ -774,43 +678,23 @@ function appendMessageUI(sender, text, thinking = "") {
 
   const msgDiv = document.createElement('div');
   msgDiv.className = `message ${sender}`;
-  
+
   const avatar = document.createElement('div');
   avatar.className = 'message-avatar';
   avatar.innerHTML = sender === 'user' ? 'U' : '<i class="fa-solid fa-robot"></i>';
-  
+
   const content = document.createElement('div');
   content.className = 'message-content';
-  
-  // If bot message has thinking text, render collapsed thinking process first
-  if (sender === 'bot' && thinking) {
-    const thinkingDiv = document.createElement('div');
-    thinkingDiv.className = 'thinking-container collapsed';
-    thinkingDiv.innerHTML = `
-      <button class="thinking-header" aria-label="Toggle Thinking Process">
-        <span class="thinking-status"><i class="fa-solid fa-brain" style="margin-right: 4px; color: var(--color-text-muted);"></i> Thought Process</span>
-        <i class="fa-solid fa-chevron-down thinking-toggle-icon"></i>
-      </button>
-      <div class="thinking-content">${escapeHTML(thinking)}</div>
-    `;
-    
-    // Bind toggle click
-    thinkingDiv.querySelector('.thinking-header').addEventListener('click', () => {
-      thinkingDiv.classList.toggle('collapsed');
-    });
-    
-    content.appendChild(thinkingDiv);
-  }
-  
+
   const bubble = document.createElement('div');
   bubble.className = 'message-bubble';
   bubble.innerHTML = formatMessageText(text);
-  
+
   content.appendChild(bubble);
-  
+
   msgDiv.appendChild(avatar);
   msgDiv.appendChild(content);
-  
+
   messagesStream.appendChild(msgDiv);
 }
 
@@ -842,19 +726,19 @@ function formatTimeAgo(dateStr) {
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
-  
+
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins}m ago`;
-  
+
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
-  
+
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // HTML Escaping Utility
 function escapeHTML(str) {
-  return str.replace(/[&<>'"]/g, 
+  return str.replace(/[&<>'"]/g,
     tag => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -874,11 +758,11 @@ function scrollToBottom() {
 async function handleSendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
-  
+
   // Clear input
   chatInput.value = '';
   chatInput.style.height = 'auto';
-  
+
   // Create active chat if one isn't currently open
   if (!activeChatId) {
     const newId = 'chat_' + Date.now();
@@ -892,21 +776,21 @@ async function handleSendMessage() {
     activeChatId = newId;
     messagesStream.innerHTML = ''; // clear greeting state
   }
-  
+
   const currentChat = chats.find(c => c.id === activeChatId);
   const time = getShortTime();
-  
+
   // Append user message
   const userMsg = { sender: 'user', text, time };
   currentChat.messages.push(userMsg);
   currentChat.timestamp = new Date().toISOString();
-  
+
   // Update UI & Storage
   saveStateToStorage();
   renderSidebar();
   appendMessageUI('user', text);
   scrollToBottom();
-  
+
   // Trigger Chat Stream Response Loop
   await startChatStream(text, currentChat);
 }
@@ -914,22 +798,22 @@ async function handleSendMessage() {
 // Pure response generator helper
 function generateResponseText(prompt) {
   const query = prompt.toLowerCase();
-  
+
   if (query.includes('hello') || query.includes('hi') || query.includes('greetings')) {
     const list = BOT_RESPONSES.greeting;
     return list[Math.floor(Math.random() * list.length)];
   }
-  
+
   if (query.includes('code') || query.includes('python') || query.includes('javascript') || query.includes('function') || query.includes('program')) {
     const list = BOT_RESPONSES.coding;
     return list[Math.floor(Math.random() * list.length)];
   }
-  
+
   if (query.includes('explain') || query.includes('concept') || query.includes('quantum') || query.includes('why')) {
     const list = BOT_RESPONSES.concept;
     return list[Math.floor(Math.random() * list.length)];
   }
-  
+
   const list = BOT_RESPONSES.default;
   return list[Math.floor(Math.random() * list.length)];
 }
@@ -989,13 +873,13 @@ function setupSakuraEffect() {
       ctx.translate(this.x, this.y);
       ctx.rotate(this.angle);
       ctx.scale(Math.sin(this.flip), 1); // Simulate 3D flipping
-      
+
       ctx.beginPath();
       // Draw classic cherry blossom curved petal shape
       ctx.moveTo(0, 0);
       ctx.quadraticCurveTo(this.r * 0.8, -this.r * 1.2, this.r * 1.5, 0);
       ctx.quadraticCurveTo(this.r * 0.8, this.r * 1.2, 0, 0);
-      
+
       ctx.fillStyle = `rgba(255, 117, 143, ${this.opacity})`;
       ctx.fill();
       ctx.restore();

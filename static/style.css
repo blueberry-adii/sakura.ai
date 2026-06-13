@@ -3,17 +3,21 @@
 :root {
   /* Constant colors for both modes - Unified Pastel Reddish-Pink + Red Glassmorphic Theme */
   --bg-primary: #090304;
-  --bg-secondary: #281216; /* Enhanced warm reddish-pink ambient center glow */
+  --bg-secondary: #281216;
+  /* Enhanced warm reddish-pink ambient center glow */
   --bg-glass: rgba(255, 255, 255, 0.025);
   --bg-glass-hover: rgba(255, 255, 255, 0.05);
   --bg-glass-active: rgba(255, 255, 255, 0.09);
   --border-glass: rgba(255, 255, 255, 0.07);
   --border-glass-focus: rgba(255, 117, 143, 0.5);
 
-  --color-primary: #ff758f; /* Soft pastel pink/red */
+  --color-primary: #ff758f;
+  /* Soft pastel pink/red */
   --color-primary-glow: rgba(255, 117, 143, 0.2);
-  --color-secondary: #ff4d6d; /* Red accent */
-  --color-text-primary: #fbe0e4; /* Soft reddish-white */
+  --color-secondary: #ff4d6d;
+  /* Red accent */
+  --color-text-primary: #fbe0e4;
+  /* Soft reddish-white */
   --color-text-muted: #8a7074;
   --color-text-bot: #f5d6da;
   --color-bubble-bot: rgba(255, 255, 255, 0.035);
@@ -61,10 +65,13 @@ body.light-theme {
   --border-glass: rgba(0, 0, 0, 0.07);
   --border-glass-focus: rgba(224, 90, 112, 0.5);
 
-  --color-primary: #e05a70; /* Slightly darker pastel pink for text contrast */
+  --color-primary: #e05a70;
+  /* Slightly darker pastel pink for text contrast */
   --color-primary-glow: rgba(224, 90, 112, 0.15);
-  --color-secondary: #d32f2f; /* Red accent */
-  --color-text-primary: #3d2125; /* Soft dark wine text */
+  --color-secondary: #d32f2f;
+  /* Red accent */
+  --color-text-primary: #3d2125;
+  /* Soft dark wine text */
   --color-text-muted: #8e7074;
   --color-text-bot: #42282c;
   --color-bubble-bot: rgba(0, 0, 0, 0.03);
@@ -439,7 +446,8 @@ body.light-theme .chat-options-dropdown {
   background: rgba(10, 5, 6, 0.4);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  z-index: 100; /* Elevated header z-index */
+  z-index: 100;
+  /* Elevated header z-index */
   transition: background var(--transition-smooth), border-color var(--transition-smooth);
 }
 
@@ -495,7 +503,8 @@ body.light-theme .chat-options-dropdown {
   right: 0;
   top: calc(100% + var(--spacing-sm));
   width: 270px;
-  background: rgba(20, 11, 13, 0.97); /* Very high opacity backdrop */
+  background: rgba(20, 11, 13, 0.97);
+  /* Very high opacity backdrop */
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border: 1px solid var(--border-glass);
@@ -505,7 +514,8 @@ body.light-theme .chat-options-dropdown {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  z-index: 1050; /* Set z-index extremely high to display on top of messages */
+  z-index: 1050;
+  /* Set z-index extremely high to display on top of messages */
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
@@ -630,11 +640,11 @@ body.light-theme .chat-options-dropdown {
   border-radius: var(--radius-full);
 }
 
-input:checked + .switch-slider {
+input:checked+.switch-slider {
   background-color: var(--color-primary);
 }
 
-input:checked + .switch-slider::before {
+input:checked+.switch-slider::before {
   transform: translateX(20px);
   background-color: #ffffff;
 }
@@ -717,7 +727,9 @@ input:checked + .switch-slider::before {
   color: var(--color-text-bot);
   border: 1px solid var(--border-glass);
   border-bottom-left-radius: var(--radius-xs);
-}.message.user .message-bubble strong {
+}
+
+.message.user .message-bubble strong {
   font-weight: 700;
   color: #ffffff;
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
@@ -728,78 +740,7 @@ input:checked + .switch-slider::before {
   color: var(--color-primary);
 }
 
-/* Agent Thinking UI */
-.thinking-container {
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 117, 143, 0.08);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-sm);
-  overflow: hidden;
-  max-width: 100%;
-  transition: border-color var(--transition-fast);
-}
 
-body.light-theme .thinking-container {
-  background: rgba(0, 0, 0, 0.01);
-  border-color: rgba(224, 90, 112, 0.08);
-}
-
-.thinking-header {
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  font-family: var(--font-family);
-  font-size: var(--font-xs);
-  font-weight: 600;
-  text-align: left;
-  gap: var(--spacing-sm);
-  user-select: none;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.thinking-header:hover {
-  background: var(--bg-glass-hover);
-  color: var(--color-primary);
-}
-
-.thinking-status {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.thinking-toggle-icon {
-  font-size: 10px;
-  transition: transform var(--transition-smooth);
-}
-
-.thinking-container.collapsed .thinking-toggle-icon {
-  transform: rotate(-90deg);
-}
-
-.thinking-container.collapsed .thinking-content {
-  display: none;
-}
-
-.thinking-content {
-  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md) var(--spacing-md);
-  color: var(--color-text-muted);
-  font-size: var(--font-sm);
-  line-height: 1.6;
-  border-top: 1px solid rgba(255, 117, 143, 0.05);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-body.light-theme .thinking-content {
-  border-top-color: rgba(224, 90, 112, 0.05);
-}
 
 /* Typing Indicator */
 .typing-indicator {
@@ -821,8 +762,13 @@ body.light-theme .thinking-content {
   animation: typingBounce 1.4s infinite ease-in-out both;
 }
 
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 /* Empty Chat Greeting State */
 .empty-chat-state {
@@ -893,7 +839,8 @@ body.light-theme .thinking-content {
 
 .input-row {
   display: flex;
-  align-items: center; /* Centered vertically input box and send button */
+  align-items: center;
+  /* Centered vertically input box and send button */
   gap: var(--spacing-sm);
 }
 
@@ -959,6 +906,7 @@ body.light-theme .thinking-content {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -966,13 +914,27 @@ body.light-theme .thinking-content {
 }
 
 @keyframes typingBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 @keyframes floatIcon {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 /* Custom Scrollbar */
@@ -1002,30 +964,35 @@ body.light-theme .thinking-content {
     bottom: 0;
     height: 100%;
     box-shadow: var(--shadow-main);
-    width: 280px; /* Force expanded width drawer on mobile */
-    z-index: 1100; /* Fix overlap with chat-header z-index: 100 blurring content underneath */
+    width: 280px;
+    /* Force expanded width drawer on mobile */
+    z-index: 1100;
+    /* Fix overlap with chat-header z-index: 100 blurring content underneath */
   }
 
   .sidebar.collapsed {
-    width: 280px; /* Do not collapse to slim bar on mobile */
+    width: 280px;
+    /* Do not collapse to slim bar on mobile */
     left: -280px;
   }
 
   .sidebar.open {
     left: 0;
   }
-  
+
   .sidebar.open.collapsed {
     left: 0;
   }
-  
+
   .sidebar.collapsed .brand span,
   .sidebar.collapsed .new-chat-btn span {
-    display: block; /* Show normally on mobile drawer even if desktop was collapsed */
+    display: block;
+    /* Show normally on mobile drawer even if desktop was collapsed */
   }
-  
+
   .sidebar.collapsed .collapse-sidebar-btn {
-    display: none; /* Hide collapse btn on mobile drawer */
+    display: none;
+    /* Hide collapse btn on mobile drawer */
   }
 
   /* Show past chats on mobile drawer even if desktop is collapsed */
@@ -1034,7 +1001,8 @@ body.light-theme .thinking-content {
   }
 
   .chat-options-btn {
-    display: none !important; /* Hide options button on mobile drawer; use long press context trigger */
+    display: none !important;
+    /* Hide options button on mobile drawer; use long press context trigger */
   }
 
   .menu-toggle {
@@ -1069,7 +1037,8 @@ body.light-theme .thinking-content {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1; /* Sits behind text bubbles and controls but in front of background radial gradient */
+  z-index: 1;
+  /* Sits behind text bubbles and controls but in front of background radial gradient */
   width: 100%;
   height: 100%;
 }
