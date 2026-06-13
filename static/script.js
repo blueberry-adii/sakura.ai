@@ -70,6 +70,131 @@ if (typeof document !== 'undefined') {
   });
 }
 
+async function startChatStream(message, chatObj) {
+  // Add typing bubble UI element
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message bot typing-wrapper';
+  typingDiv.innerHTML = `
+    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+    <div class="message-content">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+  `;
+  messagesStream.appendChild(typingDiv);
+  scrollToBottom();
+
+  const url = "/api/v1/chat";
+  const payload = {
+    message: message
+  };
+
+  let botBubble = null;
+  let fullBotResponseText = "";
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Remove typing indicator once stream connection is successful
+    if (typingDiv) {
+      typingDiv.remove();
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8"); 
+    let isDone = false;
+    let accumulatedBuffer = "";
+
+    while (!isDone) {
+      const { value, done } = await reader.read();
+      if (done) {
+        isDone = true;
+        break;
+      }
+
+      const rawChunk = decoder.decode(value, { stream: true });
+      accumulatedBuffer += rawChunk;
+
+      const lines = accumulatedBuffer.split("\n");
+      accumulatedBuffer = lines.pop(); // Keep partial/incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.trim().startsWith("data: ")) {
+          const jsonString = line.replace("data: ", "").trim();
+          
+          try {
+            const parsedData = JSON.parse(jsonString);
+            
+            console.log("Received data:", parsedData);
+            
+            if (parsedData.message && parsedData.message.content) {
+              if (!botBubble) {
+                if (activeChatId === chatObj.id) {
+                  const msgDiv = document.createElement('div');
+                  msgDiv.className = 'message bot';
+                  msgDiv.innerHTML = `
+                    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-content">
+                      <div class="message-bubble"></div>
+                    </div>
+                  `;
+                  messagesStream.appendChild(msgDiv);
+                  botBubble = msgDiv.querySelector('.message-bubble');
+                }
+              }
+              
+              fullBotResponseText += parsedData.message.content;
+              if (botBubble && activeChatId === chatObj.id) {
+                botBubble.innerHTML = formatMessageText(fullBotResponseText);
+                scrollToBottom();
+              }
+            }
+            
+            if (parsedData.done === true) {
+              console.log("Stream marked completed by backend.");
+              isDone = true;
+              break;
+            }
+          } catch (e) {
+            console.error("Error parsing mini JSON chunk:", e, "on line:", jsonString);
+          }
+        }
+      }
+    }
+
+    // Append finalized bot response to memory state and save
+    const botMsg = { sender: 'bot', text: fullBotResponseText, time: getShortTime() };
+    chatObj.messages.push(botMsg);
+    saveStateToStorage();
+
+  } catch (error) {
+    console.error("Failed to fetch or parse the stream:", error);
+    if (typingDiv) {
+      typingDiv.remove();
+    }
+    const errorMsgText = "Sorry, I encountered an error connecting to the Aries service. Please ensure the backend is running.";
+    if (activeChatId === chatObj.id) {
+      appendMessageUI('bot', errorMsgText);
+      scrollToBottom();
+    }
+    chatObj.messages.push({ sender: 'bot', text: errorMsgText, time: getShortTime() });
+    saveStateToStorage();
+  }
+}
+
 // Event Listeners Configuration
 function setupEventListeners() {
   // Mobile Sidebar Toggle
@@ -573,6 +698,8 @@ function formatMessageText(text) {
   let formatted = escapeHTML(text);
   // Simple code block replacement
   formatted = formatted.replace(/```(javascript|python|html|css)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Bold formatting replacement: **text** to <strong>text</strong>
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   // Line break support
   formatted = formatted.replace(/\n/g, '<br>');
   return formatted;
@@ -659,46 +786,8 @@ async function handleSendMessage() {
   appendMessageUI('user', text);
   scrollToBottom();
   
-  // Trigger Simulated Bot Response Loop
-  await simulateBotResponse(text, currentChat);
-}
-
-// Simulate Typing and generate smart reply
-async function simulateBotResponse(userPrompt, chatObj) {
-  // Add typing bubble UI element
-  const typingDiv = document.createElement('div');
-  typingDiv.className = 'message bot typing-wrapper';
-  typingDiv.innerHTML = `
-    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
-    <div class="message-content">
-      <div class="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>
-    </div>
-  `;
-  messagesStream.appendChild(typingDiv);
-  scrollToBottom();
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 500));
-  
-  // Clean up typing element
-  typingDiv.remove();
-  
-  // Generate response content based on query keywords
-  const botText = generateResponseText(userPrompt);
-  const time = getShortTime();
-  
-  // Append bot response
-  const botMsg = { sender: 'bot', text: botText, time };
-  chatObj.messages.push(botMsg);
-  
-  // Update state & UI
-  saveStateToStorage();
-  appendMessageUI('bot', botText);
-  scrollToBottom();
+  // Trigger Chat Stream Response Loop
+  await startChatStream(text, currentChat);
 }
 
 // Pure response generator helper
@@ -814,7 +903,8 @@ if (typeof module !== 'undefined' && module.exports) {
     generateResponseText,
     escapeHTML,
     formatTimeAgo,
-    getGreetingMessage
+    getGreetingMessage,
+    formatMessageText
   };
 }
 // Export additional function for group testing

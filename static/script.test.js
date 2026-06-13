@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { generateResponseText, escapeHTML, formatTimeAgo, getGreetingMessage, groupChatsByDate } = require('./script.js');
+const { generateResponseText, escapeHTML, formatTimeAgo, getGreetingMessage, groupChatsByDate, formatMessageText } = require('./script.js');
 
 console.log('--- Starting Aries script.js Unit Tests ---');
 
@@ -112,6 +112,28 @@ try {
   console.log('✓ Date grouping resolves Today, Yesterday, and legacy calendar structures.');
 } catch (err) {
   console.error('✗ Date grouping test failed:', err.message);
+  process.exit(1);
+}
+
+// Test 6: Message Formatting & Markdown parsing (Bold notation)
+try {
+  console.log('Running Test 6: formatMessageText...');
+  
+  // Test simple bold replacement
+  const inputBold = 'This is **bold** text.';
+  const expectedBold = 'This is <strong>bold</strong> text.';
+  const actualBold = formatMessageText(inputBold);
+  assert.strictEqual(actualBold, expectedBold);
+  
+  // Test code blocks & escaping
+  const inputCode = 'Code: ```javascript\nconsole.log("<test>");\n```';
+  const expectedCode = 'Code: <pre><code>console.log(&quot;&lt;test&gt;&quot;);<br></code></pre>';
+  const actualCode = formatMessageText(inputCode);
+  assert.strictEqual(actualCode, expectedCode);
+
+  console.log('✓ Message formatting parses bold and code blocks correctly.');
+} catch (err) {
+  console.error('✗ Message formatting test failed:', err.message);
   process.exit(1);
 }
 

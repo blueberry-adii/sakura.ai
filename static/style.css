@@ -717,6 +717,88 @@ input:checked + .switch-slider::before {
   color: var(--color-text-bot);
   border: 1px solid var(--border-glass);
   border-bottom-left-radius: var(--radius-xs);
+}.message.user .message-bubble strong {
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+.message.bot .message-bubble strong {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Agent Thinking UI */
+.thinking-container {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 117, 143, 0.08);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  overflow: hidden;
+  max-width: 100%;
+  transition: border-color var(--transition-fast);
+}
+
+body.light-theme .thinking-container {
+  background: rgba(0, 0, 0, 0.01);
+  border-color: rgba(224, 90, 112, 0.08);
+}
+
+.thinking-header {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-family: var(--font-family);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-align: left;
+  gap: var(--spacing-sm);
+  user-select: none;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.thinking-header:hover {
+  background: var(--bg-glass-hover);
+  color: var(--color-primary);
+}
+
+.thinking-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.thinking-toggle-icon {
+  font-size: 10px;
+  transition: transform var(--transition-smooth);
+}
+
+.thinking-container.collapsed .thinking-toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.thinking-container.collapsed .thinking-content {
+  display: none;
+}
+
+.thinking-content {
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md) var(--spacing-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  line-height: 1.6;
+  border-top: 1px solid rgba(255, 117, 143, 0.05);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+body.light-theme .thinking-content {
+  border-top-color: rgba(224, 90, 112, 0.05);
 }
 
 /* Typing Indicator */
