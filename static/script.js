@@ -5,7 +5,7 @@ let sidebarCollapsed = false;
 let currentTheme = 'dark';
 
 // UI Element Selectors (lazy load if in browser context)
-let sidebar, sidebarBackdrop, menuToggle, newChatBtn, chatHistoryList, activeChatTitle, activeChatStatus, messagesStream, chatInput, sendBtn, collapseSidebarBtn, themeToggleBtn;
+let sidebar, sidebarBackdrop, menuToggle, newChatBtn, chatHistoryList, activeChatTitle, activeChatStatus, messagesStream, chatInput, sendBtn, collapseSidebarBtn, settingsBtn, settingsDropdown, themeToggleCheckbox, themeIcon;
 
 if (typeof document !== 'undefined') {
   sidebar = document.getElementById('sidebar');
@@ -19,7 +19,10 @@ if (typeof document !== 'undefined') {
   chatInput = document.getElementById('chatInput');
   sendBtn = document.getElementById('sendBtn');
   collapseSidebarBtn = document.getElementById('collapseSidebarBtn');
-  themeToggleBtn = document.getElementById('themeToggleBtn');
+  settingsBtn = document.getElementById('settingsBtn');
+  settingsDropdown = document.getElementById('settingsDropdown');
+  themeToggleCheckbox = document.getElementById('themeToggleCheckbox');
+  themeIcon = document.getElementById('themeIcon');
 }
 
 // Mock responses dictionary for dynamic/contextual feel
@@ -77,8 +80,25 @@ function setupEventListeners() {
   // Desktop/General Collapse Toggle
   collapseSidebarBtn.addEventListener('click', toggleSidebarCollapse);
 
-  // Theme Toggle Trigger
-  themeToggleBtn.addEventListener('click', toggleTheme);
+  // Settings Panel Toggle
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    settingsDropdown.classList.toggle('active');
+  });
+
+  // Close Settings Dropdown clicking outside
+  document.addEventListener('click', (e) => {
+    if (settingsDropdown && !settingsDropdown.contains(e.target) && e.target !== settingsBtn) {
+      settingsDropdown.classList.remove('active');
+    }
+  });
+
+  // Theme Toggle Switch
+  themeToggleCheckbox.addEventListener('change', () => {
+    currentTheme = themeToggleCheckbox.checked ? 'dark' : 'light';
+    applyTheme();
+    saveStateToStorage();
+  });
 
   // New Chat Action
   newChatBtn.addEventListener('click', () => {
@@ -121,19 +141,23 @@ function applySidebarCollapse() {
 }
 
 // Theme Switcher Control
-function toggleTheme() {
-  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  applyTheme();
-  saveStateToStorage();
-}
-
 function applyTheme() {
   if (currentTheme === 'light') {
     document.body.classList.add('light-theme');
-    themeToggleBtn.innerHTML = '<i class="fa-regular fa-moon"></i>';
+    if (themeToggleCheckbox) {
+      themeToggleCheckbox.checked = false; // Unchecked for Light mode
+    }
+    if (themeIcon) {
+      themeIcon.className = 'fa-regular fa-sun';
+    }
   } else {
     document.body.classList.remove('light-theme');
-    themeToggleBtn.innerHTML = '<i class="fa-regular fa-sun"></i>';
+    if (themeToggleCheckbox) {
+      themeToggleCheckbox.checked = true; // Checked for Dark mode
+    }
+    if (themeIcon) {
+      themeIcon.className = 'fa-regular fa-moon';
+    }
   }
 }
 
@@ -403,6 +427,7 @@ function formatTimeAgo(dateStr) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+// HTML Escaping Utility
 // HTML Escaping Utility
 function escapeHTML(str) {
   return str.replace(/[&<>'"]/g, 

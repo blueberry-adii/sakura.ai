@@ -58,9 +58,33 @@
         </div>
 
         <div class="header-right">
-          <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Light/Dark Theme">
-            <i class="fa-regular fa-sun"></i>
-          </button>
+          <div class="settings-container">
+            <button class="settings-btn" id="settingsBtn" aria-label="Open Settings">
+              <i class="fa-solid fa-gear"></i>
+            </button>
+            <div class="settings-dropdown" id="settingsDropdown">
+              <div class="settings-header">
+                <span>Settings</span>
+              </div>
+              <div class="user-profile-card">
+                <div class="profile-avatar">A</div>
+                <div class="profile-info">
+                  <span class="profile-name">Aditya</span>
+                  <span class="profile-email">aditya@aries.ai</span>
+                </div>
+              </div>
+              <div class="settings-option">
+                <div class="option-label">
+                  <i class="fa-regular fa-moon" id="themeIcon"></i>
+                  <span>Dark Mode</span>
+                </div>
+                <label class="theme-switch">
+                  <input type="checkbox" id="themeToggleCheckbox">
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 

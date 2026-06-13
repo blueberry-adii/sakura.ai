@@ -56,4 +56,6 @@ When generating code or responding in the chat/terminal:
   - Implemented glassmorphism layout, collapsible mobile drawer, and localStorage state synchronization.
   - Added a node-based test suite (`static/script.test.js`) verifying DOM-free string escaping, date formatting, and keyword classification.
   - Refined UI layout with a collapsible sidebar toggle, light/dark theme modes, pastel reddish-pink/red styling, and dynamic hourly greeting rotations.
+  - Resolved sidebar collapse expand visibility, text wrap wrapping on empty states, and brand letter transparency.
+  - Replaced the direct theme toggle with a profile settings dropdown card featuring user profile info and check switches.
 
