@@ -67,4 +67,7 @@ When generating code or responding in the chat/terminal:
   - Implemented desktop hover options button (3-dot vertical ellipsis) revealing a popover context dropdown.
   - Created touch start/move/end gesture timers to capture mobile 600ms long-press inputs, displaying Rename and Delete actions.
   - Fixed overflow clipping on chat cards to display option popover dropdowns completely outside card boundaries.
-
+  - Replaced native browser dialog prompt with inline renaming input text box inside the sidebar chat cards.
+  - Integrated real-time chat response streaming from Go backend using `/api/v1/chat` Server-Sent Events.
+  - Added collapsible agent thought process container showing active reasoning logs with manual expansion dropdown button.
+  - Added formatting support for bold markdown notation `**text**` with custom styled theme highlights.

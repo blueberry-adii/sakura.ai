@@ -93,6 +93,12 @@ async function startChatStream(message, chatObj) {
   };
 
   let botBubble = null;
+  let thinkingContainer = null;
+  let thinkingContentEl = null;
+  let thinkingStatusEl = null;
+  let typingIndicatorInMsg = null;
+  let isThinkingPhase = true;
+  let fullThinkingText = "";
   let fullBotResponseText = "";
 
   try {
@@ -106,11 +112,6 @@ async function startChatStream(message, chatObj) {
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Remove typing indicator once stream connection is successful
-    if (typingDiv) {
-      typingDiv.remove();
     }
 
     const reader = response.body.getReader();
@@ -140,31 +141,123 @@ async function startChatStream(message, chatObj) {
             
             console.log("Received data:", parsedData);
             
-            if (parsedData.message && parsedData.message.content) {
-              if (!botBubble) {
-                if (activeChatId === chatObj.id) {
-                  const msgDiv = document.createElement('div');
-                  msgDiv.className = 'message bot';
-                  msgDiv.innerHTML = `
-                    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
-                    <div class="message-content">
-                      <div class="message-bubble"></div>
-                    </div>
-                  `;
-                  messagesStream.appendChild(msgDiv);
-                  botBubble = msgDiv.querySelector('.message-bubble');
+            if (parsedData.message) {
+              const thinkingChunk = parsedData.message.thinking || "";
+              const contentChunk = parsedData.message.content || "";
+              
+              if (thinkingChunk) {
+                if (!thinkingContainer) {
+                  if (activeChatId === chatObj.id) {
+                    // Remove initial global typingDiv since we now attach a localized one
+                    if (typingDiv) {
+                      typingDiv.remove();
+                    }
+                    
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'message bot';
+                    msgDiv.innerHTML = `
+                      <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                      <div class="message-content">
+                        <div class="thinking-container">
+                          <button class="thinking-header" aria-label="Toggle Thinking Process">
+                            <span class="thinking-status"><i class="fa-solid fa-brain fa-spin-pulse" style="margin-right: 4px; color: var(--color-primary);"></i> Thinking...</span>
+                            <i class="fa-solid fa-chevron-down thinking-toggle-icon"></i>
+                          </button>
+                          <div class="thinking-content"></div>
+                        </div>
+                        <div class="typing-indicator">
+                          <div class="typing-dot"></div>
+                          <div class="typing-dot"></div>
+                          <div class="typing-dot"></div>
+                        </div>
+                      </div>
+                    `;
+                    messagesStream.appendChild(msgDiv);
+                    
+                    thinkingContainer = msgDiv.querySelector('.thinking-container');
+                    thinkingContentEl = msgDiv.querySelector('.thinking-content');
+                    thinkingStatusEl = msgDiv.querySelector('.thinking-status');
+                    typingIndicatorInMsg = msgDiv.querySelector('.typing-indicator');
+                    
+                    const toggleBtn = msgDiv.querySelector('.thinking-header');
+                    toggleBtn.addEventListener('click', () => {
+                      thinkingContainer.classList.toggle('collapsed');
+                    });
+                  }
+                }
+                
+                fullThinkingText += thinkingChunk;
+                if (thinkingContentEl && activeChatId === chatObj.id) {
+                  thinkingContentEl.textContent = fullThinkingText;
+                  scrollToBottom();
                 }
               }
               
-              fullBotResponseText += parsedData.message.content;
-              if (botBubble && activeChatId === chatObj.id) {
-                botBubble.innerHTML = formatMessageText(fullBotResponseText);
-                scrollToBottom();
+              if (contentChunk) {
+                if (isThinkingPhase) {
+                  isThinkingPhase = false;
+                  // Remove bubble typing effect inside the message block
+                  if (typingIndicatorInMsg) {
+                    typingIndicatorInMsg.remove();
+                  }
+                  if (thinkingContainer) {
+                    thinkingContainer.classList.add('collapsed');
+                  }
+                  if (thinkingStatusEl) {
+                    thinkingStatusEl.innerHTML = `<i class="fa-solid fa-brain" style="margin-right: 4px; color: var(--color-text-muted);"></i> Thought Process`;
+                  }
+                }
+                
+                if (!botBubble) {
+                  // Ensure initial typingDiv is removed if thinking was skipped
+                  if (typingDiv) {
+                    typingDiv.remove();
+                  }
+                  
+                  if (activeChatId === chatObj.id) {
+                    let msgContentEl;
+                    if (thinkingContainer) {
+                      msgContentEl = thinkingContainer.parentElement;
+                    } else {
+                      const msgDiv = document.createElement('div');
+                      msgDiv.className = 'message bot';
+                      msgDiv.innerHTML = `
+                        <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
+                        <div class="message-content"></div>
+                      `;
+                      messagesStream.appendChild(msgDiv);
+                      msgContentEl = msgDiv.querySelector('.message-content');
+                    }
+                    
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
+                    msgContentEl.appendChild(bubble);
+                    botBubble = bubble;
+                  }
+                }
+                
+                fullBotResponseText += contentChunk;
+                if (botBubble && activeChatId === chatObj.id) {
+                  botBubble.innerHTML = formatMessageText(fullBotResponseText);
+                  scrollToBottom();
+                }
               }
             }
             
             if (parsedData.done === true) {
               console.log("Stream marked completed by backend.");
+              if (isThinkingPhase) {
+                isThinkingPhase = false;
+                if (typingIndicatorInMsg) {
+                  typingIndicatorInMsg.remove();
+                }
+                if (thinkingContainer) {
+                  thinkingContainer.classList.add('collapsed');
+                }
+                if (thinkingStatusEl) {
+                  thinkingStatusEl.innerHTML = `<i class="fa-solid fa-brain" style="margin-right: 4px; color: var(--color-text-muted);"></i> Thought Process`;
+                }
+              }
               isDone = true;
               break;
             }
@@ -176,7 +269,12 @@ async function startChatStream(message, chatObj) {
     }
 
     // Append finalized bot response to memory state and save
-    const botMsg = { sender: 'bot', text: fullBotResponseText, time: getShortTime() };
+    const botMsg = { 
+      sender: 'bot', 
+      text: fullBotResponseText, 
+      thinking: fullThinkingText, 
+      time: getShortTime() 
+    };
     chatObj.messages.push(botMsg);
     saveStateToStorage();
 
@@ -184,6 +282,9 @@ async function startChatStream(message, chatObj) {
     console.error("Failed to fetch or parse the stream:", error);
     if (typingDiv) {
       typingDiv.remove();
+    }
+    if (typingIndicatorInMsg) {
+      typingIndicatorInMsg.remove();
     }
     const errorMsgText = "Sorry, I encountered an error connecting to the Aries service. Please ensure the backend is running.";
     if (activeChatId === chatObj.id) {
@@ -658,13 +759,13 @@ function renderMessages(messages) {
   }
   
   messages.forEach(msg => {
-    appendMessageUI(msg.sender, msg.text);
+    appendMessageUI(msg.sender, msg.text, msg.thinking);
   });
   scrollToBottom();
 }
 
 // Create a new message bubble elements (Timestamp displays removed completely)
-function appendMessageUI(sender, text) {
+function appendMessageUI(sender, text, thinking = "") {
   // Clear empty state if visible
   const emptyState = messagesStream.querySelector('.empty-chat-state');
   if (emptyState) {
@@ -680,6 +781,26 @@ function appendMessageUI(sender, text) {
   
   const content = document.createElement('div');
   content.className = 'message-content';
+  
+  // If bot message has thinking text, render collapsed thinking process first
+  if (sender === 'bot' && thinking) {
+    const thinkingDiv = document.createElement('div');
+    thinkingDiv.className = 'thinking-container collapsed';
+    thinkingDiv.innerHTML = `
+      <button class="thinking-header" aria-label="Toggle Thinking Process">
+        <span class="thinking-status"><i class="fa-solid fa-brain" style="margin-right: 4px; color: var(--color-text-muted);"></i> Thought Process</span>
+        <i class="fa-solid fa-chevron-down thinking-toggle-icon"></i>
+      </button>
+      <div class="thinking-content">${escapeHTML(thinking)}</div>
+    `;
+    
+    // Bind toggle click
+    thinkingDiv.querySelector('.thinking-header').addEventListener('click', () => {
+      thinkingDiv.classList.toggle('collapsed');
+    });
+    
+    content.appendChild(thinkingDiv);
+  }
   
   const bubble = document.createElement('div');
   bubble.className = 'message-bubble';
