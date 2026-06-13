@@ -90,6 +90,7 @@ async function startChatStream(message, chatObj) {
 
   const url = "/api/v1/chat";
   const payload = {
+    chat_id: chatObj.id,
     message: message
   };
 

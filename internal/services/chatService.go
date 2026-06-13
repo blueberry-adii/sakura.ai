@@ -47,3 +47,20 @@ func (s *ChatService) PrepareRequest(history []models.Message, newMessage string
 		Messages: messages,
 	}
 }
+
+func (s *ChatService) EnsureChatExists(ctx context.Context, chatId string, title string) error {
+	query := `INSERT INTO chats (id, title) VALUES (?, ?) ON DUPLICATE KEY UPDATE id=id`
+	_, err := s.db.ExecContext(ctx, query, chatId, title)
+	return err
+}
+
+func (s *ChatService) SaveMessage(ctx context.Context, chatId string, role string, content string, thinking string) error {
+	var thinkingVal sql.NullString
+	if thinking != "" {
+		thinkingVal = sql.NullString{String: thinking, Valid: true}
+	}
+	query := `INSERT INTO messages (chat_id, role, content, thinking) VALUES (?, ?, ?, ?)`
+	_, err := s.db.ExecContext(ctx, query, chatId, role, content, thinkingVal)
+	return err
+}
+
