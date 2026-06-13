@@ -62,6 +62,7 @@ if (typeof document !== 'undefined') {
       }
       
       setupEventListeners();
+      setupSakuraEffect();
       console.log('[Aries UI] Chat application initialized successfully');
     } catch (error) {
       console.error('[Aries UI Error] Initialization failed:', error);
@@ -579,6 +580,90 @@ function generateResponseText(prompt) {
   
   const list = BOT_RESPONSES.default;
   return list[Math.floor(Math.random() * list.length)];
+}
+
+// Dynamic Sakura Falling Petals canvas simulation
+function setupSakuraEffect() {
+  if (typeof document === 'undefined') return;
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'sakura-canvas';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  });
+
+  const petalCount = 40;
+  const petals = [];
+
+  class Petal {
+    constructor() {
+      this.reset();
+      this.y = Math.random() * height; // Distribute initial petals vertically
+    }
+
+    reset() {
+      this.x = Math.random() * width;
+      this.y = -20;
+      this.r = 5 + Math.random() * 6; // Petal size
+      this.d = 1.0 + Math.random() * 1.2; // Fall speed
+      this.drift = -0.4 + Math.random() * 0.8; // Horizontal wind drift
+      this.opacity = 0.35 + Math.random() * 0.4;
+      this.angle = Math.random() * Math.PI * 2;
+      this.angleSpeed = 0.01 + Math.random() * 0.015;
+      this.flip = Math.random();
+      this.flipSpeed = 0.01 + Math.random() * 0.02;
+    }
+
+    update() {
+      this.y += this.d;
+      this.x += this.drift + Math.sin(this.angle) * 0.3;
+      this.angle += this.angleSpeed;
+      this.flip += this.flipSpeed;
+
+      if (this.y > height + 20 || this.x < -20 || this.x > width + 20) {
+        this.reset();
+      }
+    }
+
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.scale(Math.sin(this.flip), 1); // Simulate 3D flipping
+      
+      ctx.beginPath();
+      // Draw classic cherry blossom curved petal shape
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(this.r * 0.8, -this.r * 1.2, this.r * 1.5, 0);
+      ctx.quadraticCurveTo(this.r * 0.8, this.r * 1.2, 0, 0);
+      
+      ctx.fillStyle = `rgba(255, 117, 143, ${this.opacity})`;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  for (let i = 0; i < petalCount; i++) {
+    petals.push(new Petal());
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+    petals.forEach(petal => {
+      petal.update();
+      petal.draw();
+    });
+    requestAnimationFrame(animate);
+  }
+
+  animate();
 }
 
 // Export functions for unit testing (CommonJS fallback)

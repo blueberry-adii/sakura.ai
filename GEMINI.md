@@ -60,4 +60,5 @@ When generating code or responding in the chat/terminal:
   - Replaced the direct theme toggle with a profile settings dropdown card featuring user profile info and check switches.
   - Unified color scheme, hid past chats inside collapsed sidebars, dynamically categorized chats by calendar date groups, styled input text area gradient blurs, centered sending alignment, and removed message bubble timestamps.
   - Restored distinct soft pastel light mode styling variables and component overrides (sidebar, header, input boxes) for proper visibility.
+  - Added a dynamic HTML5 Canvas cherry blossom falling animation and enhanced ambient dark-mode background glow.
 

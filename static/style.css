@@ -2,8 +2,8 @@
 
 :root {
   /* Constant colors for both modes - Unified Pastel Reddish-Pink + Red Glassmorphic Theme */
-  --bg-primary: #0a0506;
-  --bg-secondary: #140b0d;
+  --bg-primary: #090304;
+  --bg-secondary: #281216; /* Enhanced warm reddish-pink ambient center glow */
   --bg-glass: rgba(255, 255, 255, 0.025);
   --bg-glass-hover: rgba(255, 255, 255, 0.05);
   --bg-glass-active: rgba(255, 255, 255, 0.09);
@@ -909,4 +909,14 @@ input:checked + .switch-slider::before {
   .sidebar-backdrop.active {
     display: block;
   }
+}
+
+/* Background Cherry Blossom Canvas */
+#sakura-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1; /* Sits behind text bubbles and controls but in front of background radial gradient */
+  width: 100%;
+  height: 100%;
 }
