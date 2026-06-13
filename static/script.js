@@ -26,7 +26,7 @@ if (typeof document !== 'undefined') {
 // Mock responses dictionary for dynamic/contextual feel
 const BOT_RESPONSES = {
   greeting: [
-    "Hello! I am Aries, your AI assistant. How can I help you today?",
+    "Hello! I am Sakura, your AI assistant. How can I help you today?",
     "Hi there! What can I do for you today?",
     "Greetings! I'm ready to assist. What are we working on?"
   ],
@@ -42,7 +42,7 @@ const BOT_RESPONSES = {
   default: [
     "I understand. That's a great point! Let's explore how we can implement or solve this. Could you provide a bit more context?",
     "Interesting! I'd love to help you with that. Can you tell me more about your specific goal or constraints?",
-    "Aries is ready! That sounds like an exciting task. How would you like to proceed?"
+    "Sakura is ready! That sounds like an exciting task. How would you like to proceed?"
   ]
 };
 
@@ -64,9 +64,9 @@ if (typeof document !== 'undefined') {
       setupEventListeners();
       setupSakuraEffect();
       makeFaviconSquircle();
-      console.log('[Aries UI] Chat application initialized successfully');
+      console.log('[Sakura UI] Chat application initialized successfully');
     } catch (error) {
-      console.error('[Aries UI Error] Initialization failed:', error);
+      console.error('[Sakura UI Error] Initialization failed:', error);
     }
   });
 }
@@ -76,7 +76,6 @@ async function startChatStream(message, chatObj) {
   const typingDiv = document.createElement('div');
   typingDiv.className = 'message bot typing-wrapper';
   typingDiv.innerHTML = `
-    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
     <div class="message-content">
       <div class="typing-indicator">
         <div class="typing-dot"></div>
@@ -111,7 +110,7 @@ async function startChatStream(message, chatObj) {
     }
 
     const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8"); 
+    const decoder = new TextDecoder("utf-8");
     let isDone = false;
     let accumulatedBuffer = "";
 
@@ -131,24 +130,23 @@ async function startChatStream(message, chatObj) {
       for (const line of lines) {
         if (line.trim().startsWith("data: ")) {
           const jsonString = line.replace("data: ", "").trim();
-          
+
           try {
             const parsedData = JSON.parse(jsonString);
-            
+
             console.log("Received data:", parsedData);
-            
+
             if (parsedData.message && parsedData.message.content) {
               if (!botBubble) {
                 // Remove typing indicator once the first chunk of content arrives
                 if (typingDiv) {
                   typingDiv.remove();
                 }
-                
+
                 if (activeChatId === chatObj.id) {
                   const msgDiv = document.createElement('div');
                   msgDiv.className = 'message bot';
                   msgDiv.innerHTML = `
-                    <div class="message-avatar"><i class="fa-solid fa-robot"></i></div>
                     <div class="message-content">
                       <div class="message-bubble"></div>
                     </div>
@@ -157,14 +155,14 @@ async function startChatStream(message, chatObj) {
                   botBubble = msgDiv.querySelector('.message-bubble');
                 }
               }
-              
+
               fullBotResponseText += parsedData.message.content;
               if (botBubble && activeChatId === chatObj.id) {
                 botBubble.innerHTML = formatMessageText(fullBotResponseText);
                 scrollToBottom();
               }
             }
-            
+
             if (parsedData.done === true) {
               console.log("Stream marked completed by backend.");
               isDone = true;
@@ -192,7 +190,7 @@ async function startChatStream(message, chatObj) {
     if (typingDiv) {
       typingDiv.remove();
     }
-    const errorMsgText = "Sorry, I encountered an error connecting to the Aries service. Please ensure the backend is running.";
+    const errorMsgText = "Sorry, I encountered an error connecting to the Sakura service. Please ensure the backend is running.";
     if (activeChatId === chatObj.id) {
       appendMessageUI('bot', errorMsgText);
       scrollToBottom();
@@ -336,7 +334,7 @@ function loadStateFromStorage() {
       sidebarCollapsed = savedCollapse === 'true';
     }
   } catch (error) {
-    console.error('[Aries UI Error] Failed to load state from localStorage:', error);
+    console.error('[Sakura UI Error] Failed to load state from localStorage:', error);
     chats = [];
     activeChatId = null;
     currentTheme = 'dark';
@@ -351,7 +349,7 @@ function saveStateToStorage() {
     localStorage.setItem('aries_theme', currentTheme);
     localStorage.setItem('aries_sidebar_collapsed', sidebarCollapsed.toString());
   } catch (error) {
-    console.error('[Aries UI Error] Failed to save state to localStorage:', error);
+    console.error('[Sakura UI Error] Failed to save state to localStorage:', error);
   }
 }
 
@@ -366,9 +364,8 @@ function startNewChat() {
 function showWelcomeScreen() {
   messagesStream.innerHTML = `
     <div class="empty-chat-state">
-      <div class="empty-chat-icon"><i class="fa-solid fa-robot"></i></div>
       <h1 class="empty-chat-greeting">${escapeHTML(getGreetingMessage())}</h1>
-      <p class="empty-chat-subtext">Aries is ready to collaborate. Type a message below to start a conversation.</p>
+      <p class="empty-chat-subtext">Sakura is ready to collaborate. Type a message below to start a conversation.</p>
     </div>
   `;
 
@@ -381,13 +378,13 @@ function showWelcomeScreen() {
 // Dynamic hourly greeting logic
 function getGreetingMessage(hour = new Date().getHours()) {
   if (hour >= 5 && hour < 12) {
-    return "Good Morning! Aries at your service.";
+    return "Good Morning! Sakura at your service.";
   } else if (hour >= 12 && hour < 17) {
-    return "Good Afternoon! Aries at your service.";
+    return "Good Afternoon! Sakura at your service.";
   } else if (hour >= 17 && hour < 22) {
-    return "Good Evening! Aries at your service.";
+    return "Good Evening! Sakura at your service.";
   } else {
-    return "Aries at your service. What are we building tonight?";
+    return "Sakura at your service. What are we building tonight?";
   }
 }
 
@@ -651,19 +648,19 @@ function deleteChat(id) {
       showWelcomeScreen();
     }
   } catch (error) {
-    console.error('[Aries UI Error] Failed to delete chat:', error);
+    console.error('[Sakura UI Error] Failed to delete chat:', error);
   }
 }
 
 // Render message array to the stream
 function renderMessages(messages) {
   messagesStream.innerHTML = '';
-  
+
   if (messages.length === 0) {
     showWelcomeScreen();
     return;
   }
-  
+
   messages.forEach(msg => {
     appendMessageUI(msg.sender, msg.text);
   });
@@ -681,10 +678,6 @@ function appendMessageUI(sender, text) {
   const msgDiv = document.createElement('div');
   msgDiv.className = `message ${sender}`;
 
-  const avatar = document.createElement('div');
-  avatar.className = 'message-avatar';
-  avatar.innerHTML = sender === 'user' ? 'U' : '<i class="fa-solid fa-robot"></i>';
-
   const content = document.createElement('div');
   content.className = 'message-content';
 
@@ -693,8 +686,6 @@ function appendMessageUI(sender, text) {
   bubble.innerHTML = formatMessageText(text);
 
   content.appendChild(bubble);
-
-  msgDiv.appendChild(avatar);
   msgDiv.appendChild(content);
 
   messagesStream.appendChild(msgDiv);

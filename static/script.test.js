@@ -1,7 +1,7 @@
 const assert = require('assert');
 const { generateResponseText, escapeHTML, formatTimeAgo, getGreetingMessage, groupChatsByDate, formatMessageText } = require('./script.js');
 
-console.log('--- Starting Aries script.js Unit Tests ---');
+console.log('--- Starting Sakura script.js Unit Tests ---');
 
 // Test 1: HTML Escaping
 try {
@@ -24,7 +24,7 @@ try {
     const res = generateResponseText(word);
     assert.ok(res.length > 0, `Response for ${word} is too short`);
   });
-  
+
   const coding = ['write a python function', 'javascript code', 'program details'];
   coding.forEach(word => {
     const res = generateResponseText(word);
@@ -43,11 +43,11 @@ try {
 try {
   console.log('Running Test 3: formatTimeAgo...');
   const now = new Date();
-  
+
   // Just now
   const justNow = formatTimeAgo(now.toISOString());
   assert.strictEqual(justNow, 'Just now');
-  
+
   // Minutes ago
   const tenMinsAgo = new Date(now.getTime() - 10 * 60 * 1000);
   const tenMinsStr = formatTimeAgo(tenMinsAgo.toISOString());
@@ -57,7 +57,7 @@ try {
   const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
   const threeHoursStr = formatTimeAgo(threeHoursAgo.toISOString());
   assert.strictEqual(threeHoursStr, '3h ago');
-  
+
   console.log('✓ Relative time formatter works correctly.');
 } catch (err) {
   console.error('✗ Relative time formatter test failed:', err.message);
@@ -67,10 +67,10 @@ try {
 // Test 4: Dynamic Hourly Greetings
 try {
   console.log('Running Test 4: getGreetingMessage...');
-  assert.strictEqual(getGreetingMessage(8), 'Good Morning! Aries at your service.');
-  assert.strictEqual(getGreetingMessage(14), 'Good Afternoon! Aries at your service.');
-  assert.strictEqual(getGreetingMessage(19), 'Good Evening! Aries at your service.');
-  assert.strictEqual(getGreetingMessage(23), 'Aries at your service. What are we building tonight?');
+  assert.strictEqual(getGreetingMessage(8), 'Good Morning! Sakura at your service.');
+  assert.strictEqual(getGreetingMessage(14), 'Good Afternoon! Sakura at your service.');
+  assert.strictEqual(getGreetingMessage(19), 'Good Evening! Sakura at your service.');
+  assert.strictEqual(getGreetingMessage(23), 'Sakura at your service. What are we building tonight?');
   console.log('✓ Dynamic greetings map hours correctly.');
 } catch (err) {
   console.error('✗ Dynamic greetings test failed:', err.message);
@@ -81,13 +81,13 @@ try {
 try {
   console.log('Running Test 5: groupChatsByDate...');
   const now = new Date();
-  
+
   const todayISO = now.toISOString();
-  
+
   const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
   const yesterdayISO = yesterday.toISOString();
-  
+
   const olderDate = new Date('2026-06-11T12:00:00Z');
   const olderISO = olderDate.toISOString();
 
@@ -98,13 +98,13 @@ try {
   ];
 
   const grouped = groupChatsByDate(mockChats);
-  
+
   assert.ok(grouped['Today']);
   assert.strictEqual(grouped['Today'][0].title, 'Chat 1');
-  
+
   assert.ok(grouped['Yesterday']);
   assert.strictEqual(grouped['Yesterday'][0].title, 'Chat 2');
-  
+
   assert.ok(grouped['June 11, 2026'] || grouped['11 June 2026']);
   const olderKey = grouped['June 11, 2026'] ? 'June 11, 2026' : '11 June 2026';
   assert.strictEqual(grouped[olderKey][0].title, 'Chat 3');
@@ -118,13 +118,13 @@ try {
 // Test 6: Message Formatting & Markdown parsing (Bold notation)
 try {
   console.log('Running Test 6: formatMessageText...');
-  
+
   // Test simple bold replacement
   const inputBold = 'This is **bold** text.';
   const expectedBold = 'This is <strong>bold</strong> text.';
   const actualBold = formatMessageText(inputBold);
   assert.strictEqual(actualBold, expectedBold);
-  
+
   // Test code blocks & escaping
   const inputCode = 'Code: ```javascript\nconsole.log("<test>");\n```';
   const expectedCode = 'Code: <pre><code>console.log(&quot;&lt;test&gt;&quot;);<br></code></pre>';
@@ -137,5 +137,5 @@ try {
   process.exit(1);
 }
 
-console.log('--- All Aries script.js Unit Tests Passed! ---');
+console.log('--- All Sakura script.js Unit Tests Passed! ---');
 process.exit(0);

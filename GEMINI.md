@@ -77,6 +77,8 @@ When generating code or responding in the chat/terminal:
   - Synced frontend client requests to send unique conversation `chat_id` keys to target session context.
   - Implemented custom Markdown parsing in `static/script.js` to render headers, bullet points, numbered lists, inline code, and code blocks natively.
   - Refined list parser to be indent-aware and support nested bullet points under numbered list items.
+  - Removed user and bot message avatar icons from message bubbles and cleaned up the corresponding css.
+  - Removed the floating robot greeting icon from the empty chat welcome screen layout.
 
 
 
