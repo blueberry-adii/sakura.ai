@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,79 +12,104 @@ import (
 	"github.com/blueberry-adii/aries.ai/internal/models"
 )
 
-func chat(message string) {
-	url := "http://localhost:11434/api/chat" // comes from env
+func streamHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
 
-	payload := models.OllamaRequest{
-		Model:    "qwen3:0.6b",
-		Stream:   true,
-		Messages: []models.Message{{Role: "user", Content: message}},
-	}
-	jsonValue, err := json.Marshal(payload)
-	if err != nil {
-		log.Fatalf("Failed to marshal request: %v", err)
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+		return
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
-		log.Fatalf("HTTP request failed: %v", err)
-	}
-	defer resp.Body.Close()
+	chunks := chat(r.Context(), "Why is the sky blue?")
 
-	scanner := bufio.NewScanner(resp.Body)
-
-	fmt.Println("--- Streaming Response ---")
-	for scanner.Scan() {
-		var chunk models.OllamaResponse
-		line := scanner.Bytes()
-
-		if err := json.Unmarshal(line, &chunk); err != nil {
-			log.Printf("Error unmarshaling chunk: %v", err)
+	for chunk := range chunks {
+		jsonBytes, err := json.Marshal(chunk)
+		if err != nil {
+			log.Printf("Error marshaling JSON: %v", err)
 			continue
 		}
 
-		if chunk.Message.Thinking != "" {
-			fmt.Print(chunk.Message.Thinking)
-		}
+		fmt.Fprintf(w, "data: %s\n\n", string(jsonBytes))
 
-		if chunk.Message.Content != "" {
-			fmt.Print(chunk.Message.Content)
-		}
-
-		if chunk.Done {
-			break
-		}
+		flusher.Flush()
 	}
+}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatalf("Error reading stream: %v", err)
-	}
-	fmt.Println("\n--- Stream Finished ---")
+func chat(ctx context.Context, message string) <-chan models.OllamaResponse {
+	out := make(chan models.OllamaResponse)
+
+	go func() {
+		defer close(out)
+
+		url := "http://localhost:11434/api/chat" // comes from env
+		payload := models.OllamaRequest{
+			Model:    "qwen3:0.6b",
+			Stream:   true,
+			Messages: []models.Message{{Role: "user", Content: message}},
+		}
+
+		jsonValue, err := json.Marshal(payload)
+		if err != nil {
+			log.Printf("Failed to marshal request: %v", err)
+			return
+		}
+
+		req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonValue))
+		if err != nil {
+			log.Printf("Ollama stream error (req creation): %v", err)
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Printf("HTTP request failed: %v", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		scanner := bufio.NewScanner(resp.Body)
+		for scanner.Scan() {
+			select {
+			case <-ctx.Done():
+				log.Println("User disconnected. Aborting stream loop.")
+				return
+			default:
+			}
+
+			var chunk models.OllamaResponse
+
+			if err := json.Unmarshal(scanner.Bytes(), &chunk); err != nil {
+				log.Printf("Error unmarshaling chunk: %v", err)
+				continue
+			}
+
+			select {
+			case out <- chunk:
+			case <-ctx.Done():
+				return
+			}
+
+			if chunk.Done {
+				break
+			}
+		}
+	}()
+
+	return out
 }
 
 func main() {
-	chat("Why is the sky blue?")
-	// mux := http.NewServeMux()
+	mux := http.NewServeMux()
 
-	// fs := http.FileServer(http.Dir("static"))
+	fs := http.FileServer(http.Dir("static"))
 
-	// mux.HandleFunc("GET /", fs.ServeHTTP)
+	mux.HandleFunc("GET /", fs.ServeHTTP)
 
-	// mux.HandleFunc("POST /api/v1/chat", func(w http.ResponseWriter, r *http.Request) {
-	// 	var body struct {
-	// 		Message string `json:"message"`
-	// 	}
+	mux.HandleFunc("POST /api/v1/chat", streamHandler)
 
-	// 	err := json.NewDecoder(r.Body).Decode(&body)
-	// 	if err != nil {
-	// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-	// 		return
-	// 	}
-	// 	defer r.Body.Close()
-	// 	chat(body.Message)
-
-	// 	w.WriteHeader(http.StatusOK)
-	// })
-
-	// http.ListenAndServe(":80", mux)
+	http.ListenAndServe(":80", mux)
 }
