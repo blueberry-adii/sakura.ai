@@ -1,10 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aries.ai</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aries.ai - Your AI Assistant</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+  <div class="app-container">
+    <!-- Sidebar backdrop for mobile view -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Sidebar Container -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">A</div>
+          <span>Aries.ai</span>
+        </div>
+      </div>
+
+      <button class="new-chat-btn" id="newChatBtn">
+        <i class="fa-solid fa-plus"></i> New Chat
+      </button>
+
+      <div class="chat-history-container">
+        <ul class="chat-history-list" id="chatHistoryList">
+          <!-- Chat list items will be injected dynamically -->
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Chat Window -->
+    <main class="chat-window">
+      <!-- Header -->
+      <header class="chat-header">
+        <div class="header-left">
+          <button class="menu-toggle" id="menuToggle" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-bars-staggered"></i>
+          </button>
+          <div class="bot-info">
+            <div class="bot-avatar-container">
+              <div class="bot-avatar">
+                <i class="fa-solid fa-robot"></i>
+              </div>
+              <div class="status-indicator"></div>
+            </div>
+            <div class="bot-name-status">
+              <span class="bot-name" id="activeChatTitle">Aries Assistant</span>
+              <span class="bot-status" id="activeChatStatus">Online</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Welcome Overlay / Screen -->
+      <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-logo">A</div>
+        <h1 class="welcome-title">Welcome to Aries.ai</h1>
+        <p class="welcome-subtitle">A premium AI assistant designed to help you write, code, brainstorm, and solve
+          complex problems seamlessly.</p>
+
+        <div class="welcome-features">
+          <div class="feature-card" data-prompt="Explain quantum computing in simple terms.">
+            <div class="feature-card-icon"><i class="fa-solid fa-atom"></i></div>
+            <div class="feature-card-title">Explain Concepts</div>
+            <div class="feature-card-desc">"Explain quantum computing in simple terms for a beginner."</div>
+          </div>
+          <div class="feature-card" data-prompt="Write a Python function to check if a string is a palindrome.">
+            <div class="feature-card-icon"><i class="fa-solid fa-code"></i></div>
+            <div class="feature-card-title">Write & Debug Code</div>
+            <div class="feature-card-desc">"Write a Python function to check if a string is a palindrome."</div>
+          </div>
+          <div class="feature-card" data-prompt="Give me 5 creative ideas for a tech newsletter.">
+            <div class="feature-card-icon"><i class="fa-solid fa-lightbulb"></i></div>
+            <div class="feature-card-title">Brainstorm Ideas</div>
+            <div class="feature-card-desc">"Give me 5 creative ideas for a tech startup newsletter."</div>
+          </div>
+          <div class="feature-card" data-prompt="Help me write a professional follow-up email.">
+            <div class="feature-card-icon"><i class="fa-solid fa-envelope"></i></div>
+            <div class="feature-card-title">Draft Content</div>
+            <div class="feature-card-desc">"Help me write a professional and polite follow-up email."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Stream -->
+      <div class="messages-container" id="messagesStream">
+        <!-- Messages will be injected dynamically -->
+      </div>
+
+      <!-- Input Section -->
+      <div class="input-container">
+        <div class="input-box-wrapper">
+          <div class="quick-actions" id="quickActions">
+            <div class="action-chip" data-text="Summarize text">Summarize text</div>
+            <div class="action-chip" data-text="Help me write">Help me write</div>
+            <div class="action-chip" data-text="Analyze code">Analyze code</div>
+            <div class="action-chip" data-text="Explain theory">Explain theory</div>
+          </div>
+          <div class="input-row">
+            <textarea class="chat-input" id="chatInput" rows="1" placeholder="Type a message..." required></textarea>
+            <button class="send-btn" id="sendBtn" aria-label="Send Message">
+              <svg viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
 </body>
+
 </html>
