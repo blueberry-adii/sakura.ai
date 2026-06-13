@@ -13,9 +13,19 @@ import (
 )
 
 func streamHandler(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Message string `json:"message"`
+	}
+
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid JSON payload: %v", err.Error()), http.StatusBadRequest)
+		return
+	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -23,7 +33,7 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chunks := chat(r.Context(), "Why is the sky blue?")
+	chunks := chat(r.Context(), body.Message)
 
 	for chunk := range chunks {
 		jsonBytes, err := json.Marshal(chunk)
