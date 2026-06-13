@@ -4,13 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/blueberry-adii/sakura.ai/internal/models"
+	service "github.com/blueberry-adii/sakura.ai/internal/services"
 )
+
+var ChatService service.ChatService
 
 func streamHandler(w http.ResponseWriter, r *http.Request) {
 	var body struct {
@@ -113,6 +117,7 @@ func chat(ctx context.Context, message string) <-chan models.OllamaResponse {
 }
 
 func main() {
+	ChatService = *service.NewChatService(&sql.DB{})
 	mux := http.NewServeMux()
 
 	fs := http.FileServer(http.Dir("static"))
@@ -120,6 +125,13 @@ func main() {
 	mux.HandleFunc("GET /", fs.ServeHTTP)
 
 	mux.HandleFunc("POST /api/v1/chat", streamHandler)
+
+	mux.HandleFunc("GET /api/v1/chat/:id", func(w http.ResponseWriter, r *http.Request) {
+		var id string = r.Pattern
+		messages, _ := ChatService.FetchHistory(r.Context(), id)
+
+		json.NewEncoder(w).Encode(messages)
+	})
 
 	http.ListenAndServe(":80", mux)
 }
