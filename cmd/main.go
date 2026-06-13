@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/blueberry-adii/aries.ai/internal/models"
+	"github.com/blueberry-adii/sakura.ai/internal/models"
 )
 
 func streamHandler(w http.ResponseWriter, r *http.Request) {
