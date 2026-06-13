@@ -52,7 +52,7 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// 2. Save user message to database
-		if err := chatService.SaveMessage(r.Context(), body.ChatID, "user", body.Message, ""); err != nil {
+		if err := chatService.SaveMessage(r.Context(), body.ChatID, "user", body.Message); err != nil {
 			log.Printf("Error saving user message: %v", err)
 		}
 	}
@@ -61,14 +61,10 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 	chunks := chat(r.Context(), body.ChatID, body.Message)
 
 	var fullResponseText strings.Builder
-	var fullThinkingText strings.Builder
 
 	for chunk := range chunks {
 		if len(chunk.Message.Content) > 0 {
 			fullResponseText.WriteString(chunk.Message.Content)
-		}
-		if len(chunk.Message.Thinking) > 0 {
-			fullThinkingText.WriteString(chunk.Message.Thinking)
 		}
 
 		jsonBytes, err := json.Marshal(chunk)
@@ -82,8 +78,8 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Save bot's complete response to database
-	if chatService != nil && body.ChatID != "" && (fullResponseText.Len() > 0 || fullThinkingText.Len() > 0) {
-		if err := chatService.SaveMessage(context.Background(), body.ChatID, "assistant", fullResponseText.String(), fullThinkingText.String()); err != nil {
+	if chatService != nil && body.ChatID != "" && fullResponseText.Len() > 0 {
+		if err := chatService.SaveMessage(context.Background(), body.ChatID, "assistant", fullResponseText.String()); err != nil {
 			log.Printf("Error saving assistant message: %v", err)
 		}
 	}
@@ -96,7 +92,7 @@ func chat(ctx context.Context, chatId string, message string) <-chan models.Olla
 		defer close(out)
 
 		url := "http://localhost:11434/api/chat" // comes from env
-		
+
 		var payload models.OllamaRequest
 
 		if chatService != nil && chatId != "" {
@@ -178,7 +174,7 @@ func main() {
 	if dbUser == "" {
 		dbUser = "root"
 	}
-	dbPass := os.Getenv("DB_PASSWORD")
+	dbPass := "pass"
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
 		dbHost = "127.0.0.1"

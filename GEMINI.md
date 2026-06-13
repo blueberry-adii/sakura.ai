@@ -73,4 +73,7 @@ When generating code or responding in the chat/terminal:
   - Added formatting support for bold markdown notation `**text**` with custom styled theme highlights.
 - **2026-06-14**: Replaced text-based sidebar logo with `sakura.png` brand asset using `object-fit: contain`.
   - Added a dynamic HTML Canvas squircle favicon generator that clips `sakura.png` over the signature pink-red theme gradient and injects it as a base64 Data URL.
+  - Integrated MySQL database-backed message history retrieval and storage within the Go backend (`cmd/main.go`, `internal/services/chatService.go`).
+  - Synced frontend client requests to send unique conversation `chat_id` keys to target session context.
+
 
