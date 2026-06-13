@@ -55,4 +55,5 @@ When generating code or responding in the chat/terminal:
 - **2026-06-13**: Created the AI Chatbot frontend under the `static/` directory using vanilla HTML, CSS variables, and Javascript.
   - Implemented glassmorphism layout, collapsible mobile drawer, and localStorage state synchronization.
   - Added a node-based test suite (`static/script.test.js`) verifying DOM-free string escaping, date formatting, and keyword classification.
+  - Refined UI layout with a collapsible sidebar toggle, light/dark theme modes, pastel reddish-pink/red styling, and dynamic hourly greeting rotations.
 

@@ -1,9 +1,11 @@
 // Global Application State
 let chats = [];
 let activeChatId = null;
+let sidebarCollapsed = false;
+let currentTheme = 'dark';
 
 // UI Element Selectors (lazy load if in browser context)
-let sidebar, sidebarBackdrop, menuToggle, newChatBtn, chatHistoryList, activeChatTitle, activeChatStatus, welcomeOverlay, messagesStream, chatInput, sendBtn, quickActions, welcomeFeatures;
+let sidebar, sidebarBackdrop, menuToggle, newChatBtn, chatHistoryList, activeChatTitle, activeChatStatus, messagesStream, chatInput, sendBtn, collapseSidebarBtn, themeToggleBtn;
 
 if (typeof document !== 'undefined') {
   sidebar = document.getElementById('sidebar');
@@ -13,12 +15,11 @@ if (typeof document !== 'undefined') {
   chatHistoryList = document.getElementById('chatHistoryList');
   activeChatTitle = document.getElementById('activeChatTitle');
   activeChatStatus = document.getElementById('activeChatStatus');
-  welcomeOverlay = document.getElementById('welcomeOverlay');
   messagesStream = document.getElementById('messagesStream');
   chatInput = document.getElementById('chatInput');
   sendBtn = document.getElementById('sendBtn');
-  quickActions = document.getElementById('quickActions');
-  welcomeFeatures = document.querySelectorAll('.feature-card');
+  collapseSidebarBtn = document.getElementById('collapseSidebarBtn');
+  themeToggleBtn = document.getElementById('themeToggleBtn');
 }
 
 // Mock responses dictionary for dynamic/contextual feel
@@ -49,6 +50,8 @@ if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     try {
       loadStateFromStorage();
+      applyTheme();
+      applySidebarCollapse();
       renderSidebar();
       
       if (activeChatId) {
@@ -68,13 +71,19 @@ if (typeof document !== 'undefined') {
 // Event Listeners Configuration
 function setupEventListeners() {
   // Mobile Sidebar Toggle
-  menuToggle.addEventListener('click', toggleSidebar);
-  sidebarBackdrop.addEventListener('click', closeSidebar);
+  menuToggle.addEventListener('click', toggleMobileSidebar);
+  sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+  // Desktop/General Collapse Toggle
+  collapseSidebarBtn.addEventListener('click', toggleSidebarCollapse);
+
+  // Theme Toggle Trigger
+  themeToggleBtn.addEventListener('click', toggleTheme);
 
   // New Chat Action
   newChatBtn.addEventListener('click', () => {
     startNewChat();
-    closeSidebar();
+    closeMobileSidebar();
   });
 
   // Textarea Auto-growth & Keyboard Submissions
@@ -83,29 +92,49 @@ function setupEventListeners() {
 
   // Message Send Buttons
   sendBtn.addEventListener('click', handleSendMessage);
-
-  // Quick Action / Welcome Prompt Click handlers
-  quickActions.addEventListener('click', handleQuickActionClick);
-  
-  welcomeFeatures.forEach(card => {
-    card.addEventListener('click', () => {
-      const prompt = card.getAttribute('data-prompt');
-      if (prompt) {
-        sendDirectPrompt(prompt);
-      }
-    });
-  });
 }
 
-// Sidebar Drawer Control (Mobile)
-function toggleSidebar() {
+// Mobile Sidebar Drawer Control
+function toggleMobileSidebar() {
   sidebar.classList.toggle('open');
   sidebarBackdrop.classList.toggle('active');
 }
 
-function closeSidebar() {
+function closeMobileSidebar() {
   sidebar.classList.remove('open');
   sidebarBackdrop.classList.remove('active');
+}
+
+// Desktop Collapsible Sidebar Control
+function toggleSidebarCollapse() {
+  sidebarCollapsed = !sidebarCollapsed;
+  applySidebarCollapse();
+  saveStateToStorage();
+}
+
+function applySidebarCollapse() {
+  if (sidebarCollapsed) {
+    sidebar.classList.add('collapsed');
+  } else {
+    sidebar.classList.remove('collapsed');
+  }
+}
+
+// Theme Switcher Control
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  saveStateToStorage();
+}
+
+function applyTheme() {
+  if (currentTheme === 'light') {
+    document.body.classList.add('light-theme');
+    themeToggleBtn.innerHTML = '<i class="fa-regular fa-moon"></i>';
+  } else {
+    document.body.classList.remove('light-theme');
+    themeToggleBtn.innerHTML = '<i class="fa-regular fa-sun"></i>';
+  }
 }
 
 // Textarea auto-resize helper
@@ -127,6 +156,8 @@ function loadStateFromStorage() {
   try {
     const savedChats = localStorage.getItem('aries_chats');
     const savedActiveChat = localStorage.getItem('aries_active_chat_id');
+    const savedTheme = localStorage.getItem('aries_theme');
+    const savedCollapse = localStorage.getItem('aries_sidebar_collapsed');
     
     if (savedChats) {
       chats = JSON.parse(savedChats);
@@ -134,10 +165,18 @@ function loadStateFromStorage() {
     if (savedActiveChat) {
       activeChatId = savedActiveChat;
     }
+    if (savedTheme) {
+      currentTheme = savedTheme;
+    }
+    if (savedCollapse) {
+      sidebarCollapsed = savedCollapse === 'true';
+    }
   } catch (error) {
-    console.error('[Aries UI Error] Failed to load chats from localStorage:', error);
+    console.error('[Aries UI Error] Failed to load state from localStorage:', error);
     chats = [];
     activeChatId = null;
+    currentTheme = 'dark';
+    sidebarCollapsed = false;
   }
 }
 
@@ -145,8 +184,10 @@ function saveStateToStorage() {
   try {
     localStorage.setItem('aries_chats', JSON.stringify(chats));
     localStorage.setItem('aries_active_chat_id', activeChatId || '');
+    localStorage.setItem('aries_theme', currentTheme);
+    localStorage.setItem('aries_sidebar_collapsed', sidebarCollapsed.toString());
   } catch (error) {
-    console.error('[Aries UI Error] Failed to save chats to localStorage:', error);
+    console.error('[Aries UI Error] Failed to save state to localStorage:', error);
   }
 }
 
@@ -157,10 +198,15 @@ function startNewChat() {
   chatInput.focus();
 }
 
-// Switch UI into Welcome Overlay
+// Switch UI into Welcome Overlay (Inline Empty Greeting State)
 function showWelcomeScreen() {
-  welcomeOverlay.style.display = 'flex';
-  messagesStream.innerHTML = '';
+  messagesStream.innerHTML = `
+    <div class="empty-chat-state">
+      <div class="empty-chat-icon"><i class="fa-solid fa-robot"></i></div>
+      <h1 class="empty-chat-greeting">${escapeHTML(getGreetingMessage())}</h1>
+      <p class="empty-chat-subtext">Aries is ready to collaborate. Type a message below to start a conversation.</p>
+    </div>
+  `;
   activeChatTitle.textContent = 'Aries Assistant';
   activeChatStatus.textContent = 'Online';
   
@@ -168,6 +214,19 @@ function showWelcomeScreen() {
   document.querySelectorAll('.chat-item').forEach(item => {
     item.classList.remove('active');
   });
+}
+
+// Dynamic hourly greeting logic
+function getGreetingMessage(hour = new Date().getHours()) {
+  if (hour >= 5 && hour < 12) {
+    return "Good Morning! Aries at your service.";
+  } else if (hour >= 12 && hour < 17) {
+    return "Good Afternoon! Aries at your service.";
+  } else if (hour >= 17 && hour < 22) {
+    return "Good Evening! Aries at your service.";
+  } else {
+    return "Aries at your service. What are we building tonight?";
+  }
 }
 
 // Render the sidebar history list
@@ -213,7 +272,7 @@ function renderSidebar() {
         return;
       }
       selectChat(chat.id);
-      closeSidebar();
+      closeMobileSidebar();
     });
     
     chatHistoryList.appendChild(chatItem);
@@ -229,7 +288,6 @@ function selectChat(id) {
   }
   
   activeChatId = id;
-  welcomeOverlay.style.display = 'none';
   activeChatTitle.textContent = selectedChat.title;
   activeChatStatus.textContent = 'Online';
   
@@ -262,6 +320,12 @@ function deleteChat(id) {
 // Render message array to the stream
 function renderMessages(messages) {
   messagesStream.innerHTML = '';
+  
+  if (messages.length === 0) {
+    showWelcomeScreen();
+    return;
+  }
+  
   messages.forEach(msg => {
     appendMessageUI(msg.sender, msg.text, msg.time);
   });
@@ -270,6 +334,12 @@ function renderMessages(messages) {
 
 // Create a new message bubble elements
 function appendMessageUI(sender, text, time) {
+  // Clear empty state if visible
+  const emptyState = messagesStream.querySelector('.empty-chat-state');
+  if (emptyState) {
+    emptyState.remove();
+  }
+
   const msgDiv = document.createElement('div');
   msgDiv.className = `message ${sender}`;
   
@@ -351,21 +421,6 @@ function scrollToBottom() {
   messagesStream.scrollTop = messagesStream.scrollHeight;
 }
 
-// Trigger messages directly from suggestions
-function handleQuickActionClick(e) {
-  const chip = e.target.closest('.action-chip');
-  if (chip) {
-    const text = chip.getAttribute('data-text');
-    sendDirectPrompt(text);
-  }
-}
-
-function sendDirectPrompt(prompt) {
-  chatInput.value = prompt;
-  autoResizeTextarea();
-  handleSendMessage();
-}
-
 // Core action: Send User Message & Handle Bot Cycle
 async function handleSendMessage() {
   const text = chatInput.value.trim();
@@ -380,13 +435,13 @@ async function handleSendMessage() {
     const newId = 'chat_' + Date.now();
     const newChat = {
       id: newId,
-      title: text.length > 30 ? text.substring(0, 30) + '...' : text,
+      title: text.length > 25 ? text.substring(0, 25) + '...' : text,
       timestamp: new Date().toISOString(),
       messages: []
     };
     chats.push(newChat);
     activeChatId = newId;
-    welcomeOverlay.style.display = 'none';
+    messagesStream.innerHTML = ''; // clear greeting state
   }
   
   const currentChat = chats.find(c => c.id === activeChatId);
@@ -473,6 +528,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     generateResponseText,
     escapeHTML,
-    formatTimeAgo
+    formatTimeAgo,
+    getGreetingMessage
   };
 }

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { generateResponseText, escapeHTML, formatTimeAgo } = require('./script.js');
+const { generateResponseText, escapeHTML, formatTimeAgo, getGreetingMessage } = require('./script.js');
 
 console.log('--- Starting Aries script.js Unit Tests ---');
 
@@ -61,6 +61,19 @@ try {
   console.log('✓ Relative time formatter works correctly.');
 } catch (err) {
   console.error('✗ Relative time formatter test failed:', err.message);
+  process.exit(1);
+}
+
+// Test 4: Dynamic Hourly Greetings
+try {
+  console.log('Running Test 4: getGreetingMessage...');
+  assert.strictEqual(getGreetingMessage(8), 'Good Morning! Aries at your service.');
+  assert.strictEqual(getGreetingMessage(14), 'Good Afternoon! Aries at your service.');
+  assert.strictEqual(getGreetingMessage(19), 'Good Evening! Aries at your service.');
+  assert.strictEqual(getGreetingMessage(23), 'Aries at your service. What are we building tonight?');
+  console.log('✓ Dynamic greetings map hours correctly.');
+} catch (err) {
+  console.error('✗ Dynamic greetings test failed:', err.message);
   process.exit(1);
 }
 
