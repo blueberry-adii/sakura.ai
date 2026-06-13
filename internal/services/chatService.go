@@ -55,8 +55,57 @@ func (s *ChatService) EnsureChatExists(ctx context.Context, chatId string, title
 }
 
 func (s *ChatService) SaveMessage(ctx context.Context, chatId string, role string, content string) error {
-	query := `INSERT INTO messages (chat_id, role, content) VALUES (?, ?, ?)`
-	_, err := s.db.ExecContext(ctx, query, chatId, role, content)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	queryMsg := `INSERT INTO messages (chat_id, role, content) VALUES (?, ?, ?)`
+	if _, err := tx.ExecContext(ctx, queryMsg, chatId, role, content); err != nil {
+		return err
+	}
+
+	queryChat := `UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	if _, err := tx.ExecContext(ctx, queryChat, chatId); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *ChatService) FetchChats(ctx context.Context) ([]models.Chat, error) {
+	query := `SELECT id, title, updated_at FROM chats ORDER BY updated_at DESC`
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var chats []models.Chat
+	for rows.Next() {
+		var chat models.Chat
+		var updatedAt sql.NullTime
+		if err := rows.Scan(&chat.ID, &chat.Title, &updatedAt); err != nil {
+			return nil, err
+		}
+		if updatedAt.Valid {
+			chat.Timestamp = updatedAt.Time.Format("2006-01-02T15:04:05Z07:00")
+		}
+		chats = append(chats, chat)
+	}
+	return chats, nil
+}
+
+func (s *ChatService) RenameChat(ctx context.Context, chatId string, title string) error {
+	query := `UPDATE chats SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	_, err := s.db.ExecContext(ctx, query, title, chatId)
+	return err
+}
+
+func (s *ChatService) DeleteChat(ctx context.Context, chatId string) error {
+	query := `DELETE FROM chats WHERE id = ?`
+	_, err := s.db.ExecContext(ctx, query, chatId)
 	return err
 }
 

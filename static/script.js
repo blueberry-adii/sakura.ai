@@ -53,13 +53,9 @@ if (typeof document !== 'undefined') {
       loadStateFromStorage();
       applyTheme();
       applySidebarCollapse();
-      renderSidebar();
-
-      if (activeChatId) {
-        selectChat(activeChatId);
-      } else {
-        showWelcomeScreen();
-      }
+      
+      // Load chat lists asynchronously from server
+      loadChatsFromServer();
 
       setupEventListeners();
       setupSakuraEffect();
@@ -593,6 +589,7 @@ function renameChatInline(id, chatItemElement) {
     if (save && val && val !== currentTitle) {
       chat.title = val;
       saveStateToStorage();
+      renameChatOnServer(id, val);
     }
 
     input.remove();
@@ -618,7 +615,7 @@ function renameChatInline(id, chatItemElement) {
 }
 
 // Select a specific chat by ID
-function selectChat(id) {
+async function selectChat(id) {
   const selectedChat = chats.find(c => c.id === id);
   if (!selectedChat) {
     showWelcomeScreen();
@@ -628,7 +625,26 @@ function selectChat(id) {
   activeChatId = id;
   saveStateToStorage();
   renderSidebar();
-  renderMessages(selectedChat.messages);
+  renderMessages(selectedChat.messages || []);
+
+  // Fetch full conversation logs from database
+  try {
+    const response = await fetch(`/api/v1/chat/${id}`);
+    if (response.ok) {
+      const messages = await response.json();
+      if (messages && Array.isArray(messages)) {
+        selectedChat.messages = messages.map(m => ({
+          sender: m.role === 'user' ? 'user' : 'bot',
+          text: m.content
+        }));
+        if (activeChatId === id) {
+          renderMessages(selectedChat.messages);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load messages from server database:", error);
+  }
 }
 
 // Delete a chat by ID
@@ -647,6 +663,8 @@ function deleteChat(id) {
     } else {
       showWelcomeScreen();
     }
+    
+    deleteChatFromServer(id);
   } catch (error) {
     console.error('[Sakura UI Error] Failed to delete chat:', error);
   }
@@ -1028,6 +1046,66 @@ function setupSakuraEffect() {
   }
 
   animate();
+}
+
+// Database CRUD operations
+async function loadChatsFromServer() {
+  try {
+    const response = await fetch('/api/v1/chats');
+    if (response.ok) {
+      const serverChats = await response.json();
+      if (serverChats && Array.isArray(serverChats)) {
+        chats = serverChats;
+        chats.forEach(c => {
+          if (!c.messages) c.messages = [];
+        });
+      }
+      if (activeChatId) {
+        selectChat(activeChatId);
+      } else {
+        renderSidebar();
+        showWelcomeScreen();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load chats from server database:", error);
+    renderSidebar();
+    if (activeChatId) {
+      selectChat(activeChatId);
+    } else {
+      showWelcomeScreen();
+    }
+  }
+}
+
+async function renameChatOnServer(id, title) {
+  try {
+    const response = await fetch(`/api/v1/chat/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title })
+    });
+    if (!response.ok) {
+      console.error("Failed to rename chat on server", response.status);
+    }
+  } catch (error) {
+    console.error("Error communicating with server to rename chat", error);
+  }
+}
+
+async function deleteChatFromServer(id) {
+  try {
+    const response = await fetch(`/api/v1/chat/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) {
+      console.error("Failed to delete chat on server", response.status);
+    }
+  } catch (error) {
+    console.error("Error communicating with server to delete chat", error);
+  }
 }
 
 // Export functions for unit testing (CommonJS fallback)

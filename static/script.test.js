@@ -127,7 +127,7 @@ try {
 
   // Test code blocks & escaping
   const inputCode = 'Code: ```javascript\nconsole.log("<test>");\n```';
-  const expectedCode = 'Code: <pre><code>console.log(&quot;&lt;test&gt;&quot;);<br></code></pre>';
+  const expectedCode = 'Code: <pre class="code-block lang-javascript"><code>console.log(&quot;&lt;test&gt;&quot;);\n</code></pre>';
   const actualCode = formatMessageText(inputCode);
   assert.strictEqual(actualCode, expectedCode);
 

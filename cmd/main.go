@@ -207,6 +207,24 @@ func main() {
 
 	mux.HandleFunc("POST /api/v1/chat", streamHandler)
 
+	mux.HandleFunc("GET /api/v1/chats", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if chatService == nil {
+			json.NewEncoder(w).Encode([]models.Chat{})
+			return
+		}
+		chats, err := chatService.FetchChats(r.Context())
+		if err != nil {
+			log.Printf("Failed to fetch chats: %v", err)
+			http.Error(w, "Failed to fetch chats", http.StatusInternalServerError)
+			return
+		}
+		if chats == nil {
+			chats = []models.Chat{}
+		}
+		json.NewEncoder(w).Encode(chats)
+	})
+
 	mux.HandleFunc("GET /api/v1/chat/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		w.Header().Set("Content-Type", "application/json")
@@ -224,6 +242,41 @@ func main() {
 			messages = []models.Message{}
 		}
 		json.NewEncoder(w).Encode(messages)
+	})
+
+	mux.HandleFunc("PUT /api/v1/chat/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		var body struct {
+			Title string `json:"title"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		if chatService == nil {
+			http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if err := chatService.RenameChat(r.Context(), id, body.Title); err != nil {
+			log.Printf("Failed to rename chat %s: %v", id, err)
+			http.Error(w, "Failed to rename chat", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux.HandleFunc("DELETE /api/v1/chat/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if chatService == nil {
+			http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if err := chatService.DeleteChat(r.Context(), id); err != nil {
+			log.Printf("Failed to delete chat %s: %v", id, err)
+			http.Error(w, "Failed to delete chat", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	})
 
 	log.Println("Starting server on :80...")

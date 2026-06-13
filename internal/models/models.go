@@ -19,3 +19,9 @@ type OllamaResponse struct {
 	} `json:"message"`
 	Done bool `json:"done"`
 }
+
+type Chat struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Timestamp string `json:"timestamp"`
+}
