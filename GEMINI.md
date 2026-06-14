@@ -76,6 +76,7 @@ When generating code or responding in the chat/terminal:
   - Integrated MySQL database-backed message history retrieval and storage within the Go backend (`cmd/main.go`, `internal/services/chatService.go`).
   - Synced frontend client requests to send unique conversation `chat_id` keys to target session context.
   - Implemented database-backed CRUD synchronization for listing (`GET`), renaming (`PUT`), and deleting (`DELETE`) chat sessions.
+  - Fixed undefined currentChat exception in handleSendMessage by resetting activeChatId when a selected chat is not found on the server, and automatically creating a fallback session.
 
   - Implemented custom Markdown parsing in `static/script.js` to render headers, bullet points, numbered lists, inline code, and code blocks natively.
   - Refined list parser to be indent-aware and support nested bullet points under numbered list items.

@@ -1,4 +1,4 @@
-FROM golang:1.26-bookworm-slim AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 

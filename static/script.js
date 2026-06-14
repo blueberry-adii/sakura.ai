@@ -618,6 +618,8 @@ function renameChatInline(id, chatItemElement) {
 async function selectChat(id) {
   const selectedChat = chats.find(c => c.id === id);
   if (!selectedChat) {
+    activeChatId = null;
+    saveStateToStorage();
     showWelcomeScreen();
     return;
   }
@@ -909,21 +911,20 @@ async function handleSendMessage() {
   chatInput.value = '';
   chatInput.style.height = 'auto';
 
-  // Create active chat if one isn't currently open
-  if (!activeChatId) {
+  // Create active chat if one isn't currently open or doesn't exist in chats list
+  let currentChat = chats.find(c => c.id === activeChatId);
+  if (!activeChatId || !currentChat) {
     const newId = 'chat_' + Date.now();
-    const newChat = {
+    currentChat = {
       id: newId,
       title: text.length > 25 ? text.substring(0, 25) + '...' : text,
       timestamp: new Date().toISOString(),
       messages: []
     };
-    chats.push(newChat);
+    chats.push(currentChat);
     activeChatId = newId;
     messagesStream.innerHTML = ''; // clear greeting state
   }
-
-  const currentChat = chats.find(c => c.id === activeChatId);
   const time = getShortTime();
 
   // Append user message
