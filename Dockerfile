@@ -15,6 +15,9 @@ WORKDIR /
 
 COPY --from=builder /app/main /main
 COPY --from=builder /app/static /static
+COPY --from=builder /app/exec /exec
+
+RUN chmod +x /exec/ollama.sh
 
 EXPOSE 80
 

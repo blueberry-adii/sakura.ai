@@ -31,5 +31,16 @@ services:
     volumes:
       - ollama_data:/root/.ollama
 
+  ollama-init:
+    image: curlimages/curl:8.11.0
+    volumes:
+      - ./exec:/exec
+    entrypoint: ["sh", "/exec/ollama.sh"]
+    depends_on:
+      - sakura
+    environment:
+      - OLLAMA_HOST=http://sakura:11434
+      - OLLAMA_MODEL=qwen3:0.6b
+
 volumes:
   ollama_data:
