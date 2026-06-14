@@ -87,11 +87,13 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 
 func chat(ctx context.Context, chatId string, message string) <-chan models.OllamaResponse {
 	out := make(chan models.OllamaResponse)
+	baseUrl := os.Getenv("AI_URL")
+	model := os.Getenv("AI_MODEL")
 
 	go func() {
 		defer close(out)
 
-		url := "http://localhost:11434/api/chat" // comes from env
+		url := baseUrl + "/api/chat" // comes from env
 
 		var payload models.OllamaRequest
 
@@ -101,7 +103,7 @@ func chat(ctx context.Context, chatId string, message string) <-chan models.Olla
 			if err != nil {
 				log.Printf("Failed to fetch history for chat %s: %v", chatId, err)
 				payload = models.OllamaRequest{
-					Model:    "qwen3:0.6b",
+					Model:    model,
 					Stream:   true,
 					Messages: []models.Message{{Role: "user", Content: message}},
 				}
@@ -174,7 +176,7 @@ func main() {
 	if dbUser == "" {
 		dbUser = "root"
 	}
-	dbPass := "pass"
+	dbPass := os.Getenv("DB_PASSWORD")
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
 		dbHost = "127.0.0.1"
@@ -196,6 +198,23 @@ func main() {
 	if err := db.Ping(); err != nil {
 		log.Printf("Warning: Database ping failed: %v. Database operations will fail if MySQL is offline.", err)
 	}
+
+	db.Exec(`CREATE TABLE IF NOT EXISTS chats (
+        id VARCHAR(36) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );`)
+
+	db.Exec(`CREATE TABLE IF NOT EXISTS messages (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        chat_id VARCHAR(36) NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        content MEDIUMTEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE,
+        INDEX idx_chat_created (chat_id, created_at)
+    );`)
 
 	chatService = service.NewChatService(db)
 

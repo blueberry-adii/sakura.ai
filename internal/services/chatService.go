@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"os"
 
 	"github.com/blueberry-adii/sakura.ai/internal/models"
 )
@@ -42,7 +43,7 @@ func (s *ChatService) PrepareRequest(history []models.Message, newMessage string
 		Content: newMessage,
 	})
 	return models.OllamaRequest{
-		Model:    "qwen3:0.6b",
+		Model:    os.Getenv("AI_MODEL"),
 		Stream:   true,
 		Messages: messages,
 	}
@@ -108,4 +109,3 @@ func (s *ChatService) DeleteChat(ctx context.Context, chatId string) error {
 	_, err := s.db.ExecContext(ctx, query, chatId)
 	return err
 }
-
